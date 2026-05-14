@@ -18,6 +18,14 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['admin', 'entrepreneur'],
         default: 'entrepreneur'
+    },
+    loginAttempts: {
+        type: Number,
+        default: 0
+    },
+    lockUntil: {
+        type: Date,
+        default: null
     }
 });
 

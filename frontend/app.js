@@ -5,8 +5,13 @@ const DOM = {
     dashboardView: document.getElementById('dashboard-view'),
     loginForm: document.getElementById('login-form'),
     registerForm: document.getElementById('register-form'),
+    forgotForm: document.getElementById('forgot-form'),
     showRegister: document.getElementById('show-register'),
     showLogin: document.getElementById('show-login'),
+    forgotPasswordBtn: document.getElementById('forgot-password-btn'),
+    backToLogin: document.getElementById('back-to-login'),
+    loginMessage: document.getElementById('login-message'),
+    forgotMessage: document.getElementById('forgot-message'),
     logoutBtn: document.getElementById('logout-btn'),
     navDash: document.getElementById('nav-dash'),
     navChallenges: document.getElementById('nav-challenges'),
@@ -35,9 +40,9 @@ const DOM = {
     resourceCategoryFilter: document.getElementById('resource-category-filter'),
     newsList: document.getElementById('news-list'),
     newsDomainFilter: document.getElementById('news-domain-filter'),
-    newsDateFilter: document.getElementById('news-date-filter'),
     newsStartDate: document.getElementById('news-start-date'),
     newsEndDate: document.getElementById('news-end-date'),
+    newsSortFilter: document.getElementById('news-sort-filter'),
     pitchTagFilter: document.getElementById('pitch-tag-filter'),
     pitchStatusFilter: document.getElementById('pitch-status-filter'),
     challengeSearch: document.getElementById('challenge-search'),
@@ -138,11 +143,26 @@ function init() {
 
 DOM.showRegister.addEventListener('click', () => {
     DOM.loginForm.classList.add('hidden');
+    DOM.forgotForm.classList.add('hidden');
     DOM.registerForm.classList.remove('hidden');
 });
 
 DOM.showLogin.addEventListener('click', () => {
     DOM.registerForm.classList.add('hidden');
+    DOM.forgotForm.classList.add('hidden');
+    DOM.loginForm.classList.remove('hidden');
+});
+
+DOM.forgotPasswordBtn.addEventListener('click', () => {
+    DOM.loginForm.classList.add('hidden');
+    DOM.registerForm.classList.add('hidden');
+    DOM.forgotForm.classList.remove('hidden');
+    DOM.forgotMessage.classList.add('hidden');
+    document.getElementById('forgot-email').value = document.getElementById('login-email').value;
+});
+
+DOM.backToLogin.addEventListener('click', () => {
+    DOM.forgotForm.classList.add('hidden');
     DOM.loginForm.classList.remove('hidden');
 });
 
@@ -173,9 +193,9 @@ DOM.challengeSearch.addEventListener('input', renderProblems);
 DOM.resourceSearch.addEventListener('input', loadResources);
 DOM.resourceCategoryFilter.addEventListener('change', loadResources);
 DOM.newsDomainFilter.addEventListener('change', loadNews);
-DOM.newsDateFilter.addEventListener('change', renderNews);
 DOM.newsStartDate.addEventListener('change', renderNews);
 DOM.newsEndDate.addEventListener('change', renderNews);
+DOM.newsSortFilter.addEventListener('change', renderNews);
 
 DOM.chatbotToggle.addEventListener('click', openChatbot);
 DOM.chatbotClose.addEventListener('click', closeChatbot);
@@ -218,6 +238,9 @@ function switchTab(tab) {
 function showAuth() {
     DOM.authView.classList.remove('hidden');
     DOM.dashboardView.classList.add('hidden');
+    DOM.loginForm.classList.remove('hidden');
+    DOM.registerForm.classList.add('hidden');
+    DOM.forgotForm.classList.add('hidden');
 }
 
 function showDashboard() {
@@ -260,12 +283,34 @@ DOM.loginForm.addEventListener('submit', async (e) => {
             localStorage.setItem('token', data.token);
             localStorage.setItem('role', data.role);
             localStorage.setItem('name', data.name);
+            setFormMessage(DOM.loginMessage, '', '');
             showDashboard();
         } else {
-            alert(data.message);
+            setFormMessage(DOM.loginMessage, data.message || 'Login failed', 'error');
         }
     } catch (error) {
-        alert('Login failed');
+        setFormMessage(DOM.loginMessage, 'Login failed. Check that the backend is running.', 'error');
+    }
+});
+
+DOM.forgotForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgot-email').value;
+
+    try {
+        const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        setFormMessage(
+            DOM.forgotMessage,
+            data.message || 'If an account exists, password recovery instructions will be available.',
+            res.ok ? 'success' : 'error'
+        );
+    } catch (error) {
+        setFormMessage(DOM.forgotMessage, 'Password recovery is unavailable right now.', 'error');
     }
 });
 
@@ -533,12 +578,21 @@ function loadResources() {
 }
 
 async function loadNews() {
-    DOM.newsList.innerHTML = '<p>Loading latest tech articles...</p>';
-    const domain = DOM.newsDomainFilter.value || 'technology';
+    DOM.newsList.innerHTML = '<p>Loading industry articles...</p>';
+    const domain = DOM.newsDomainFilter.value || 'startup-business-fintech';
+    const tags = getNewsTags(domain);
 
     try {
-        const res = await fetch(`https://dev.to/api/articles?tag=${encodeURIComponent(domain)}&per_page=20`);
-        newsArticles = await res.json();
+        const articleBatches = await Promise.all(tags.map(async (tag) => {
+            const res = await fetch(`https://dev.to/api/articles?tag=${encodeURIComponent(tag)}&per_page=20`);
+
+            if (!res.ok) {
+                return [];
+            }
+
+            return res.json();
+        }));
+        newsArticles = dedupeArticles(articleBatches.flat());
         renderNews();
     } catch (error) {
         DOM.newsList.innerHTML = '<p class="text-red-500">Failed to load news.</p>';
@@ -548,16 +602,19 @@ async function loadNews() {
 function renderNews() {
     DOM.newsList.innerHTML = '';
 
-    const exactDate = DOM.newsDateFilter.value;
     const startDate = DOM.newsStartDate.value;
     const endDate = DOM.newsEndDate.value;
+    const sortOrder = DOM.newsSortFilter.value;
 
     const filteredArticles = newsArticles.filter((article) => {
         const publishedDate = new Date(article.published_at).toISOString().slice(0, 10);
-        const matchesExact = !exactDate || publishedDate === exactDate;
         const matchesStart = !startDate || publishedDate >= startDate;
         const matchesEnd = !endDate || publishedDate <= endDate;
-        return matchesExact && matchesStart && matchesEnd;
+        return matchesStart && matchesEnd;
+    }).sort((a, b) => {
+        const firstDate = new Date(a.published_at).getTime();
+        const secondDate = new Date(b.published_at).getTime();
+        return sortOrder === 'oldest' ? firstDate - secondDate : secondDate - firstDate;
     });
 
     if (filteredArticles.length === 0) {
@@ -573,6 +630,35 @@ function renderNews() {
         <p class="text-sm text-gray-500">By ${escapeHtml(article.user?.name || 'Unknown')} on ${new Date(article.published_at).toLocaleDateString()}</p>
       `;
         DOM.newsList.appendChild(div);
+    });
+}
+
+function getNewsTags(domain) {
+    const tagsByDomain = {
+        'startup-business-fintech': ['startup', 'business', 'fintech', 'entrepreneurship'],
+        startup: ['startup', 'entrepreneurship'],
+        business: ['business', 'entrepreneurship'],
+        fintech: ['fintech', 'finance'],
+        technology: ['technology'],
+        ai: ['ai'],
+        cybersecurity: ['cybersecurity']
+    };
+
+    return tagsByDomain[domain] || [domain];
+}
+
+function dedupeArticles(articles) {
+    const seen = new Set();
+
+    return articles.filter((article) => {
+        const key = article.id || article.url;
+
+        if (!key || seen.has(key)) {
+            return false;
+        }
+
+        seen.add(key);
+        return true;
     });
 }
 
@@ -651,6 +737,13 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+function setFormMessage(element, message, type) {
+    element.textContent = message;
+    element.classList.toggle('hidden', !message);
+    element.classList.toggle('is-error', type === 'error');
+    element.classList.toggle('is-success', type === 'success');
 }
 
 function openChatbot() {

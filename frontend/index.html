@@ -20,10 +20,22 @@
                     class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
                 <input type="password" id="login-password" placeholder="Password" required
                     class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+                <p id="login-message" class="form-message hidden"></p>
                 <button type="submit"
                     class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Login</button>
+                <button type="button" id="forgot-password-btn" class="link-button">Forgot password?</button>
                 <p class="text-sm text-center mt-4">Don't have an account? <span id="show-register"
                         class="text-blue-600 cursor-pointer">Register</span></p>
+            </form>
+
+            <form id="forgot-form" class="space-y-4 hidden">
+                <h2 class="text-xl font-semibold">Reset Password</h2>
+                <p class="text-sm text-gray-600">Enter your account email to start password recovery.</p>
+                <input type="email" id="forgot-email" placeholder="Email" required
+                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+                <p id="forgot-message" class="form-message hidden"></p>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Continue</button>
+                <button type="button" id="back-to-login" class="link-button">Back to login</button>
             </form>
 
             <form id="register-form" class="space-y-4 hidden">
@@ -189,16 +201,20 @@
                     </div>
                     <div class="filter-row news-filters">
                         <select id="news-domain-filter" class="px-4 py-2 border rounded">
+                            <option value="startup-business-fintech">Startup, Business & Fintech</option>
                             <option value="technology">Technology</option>
                             <option value="ai">AI</option>
                             <option value="business">Business</option>
-                            <option value="startups">Startups</option>
+                            <option value="startup">Startup</option>
                             <option value="cybersecurity">Cybersecurity</option>
                             <option value="fintech">Fintech</option>
                         </select>
-                        <input type="date" id="news-date-filter" class="px-4 py-2 border rounded">
-                        <input type="date" id="news-start-date" class="px-4 py-2 border rounded">
-                        <input type="date" id="news-end-date" class="px-4 py-2 border rounded">
+                        <input type="date" id="news-start-date" class="px-4 py-2 border rounded" aria-label="Start date">
+                        <input type="date" id="news-end-date" class="px-4 py-2 border rounded" aria-label="End date">
+                        <select id="news-sort-filter" class="px-4 py-2 border rounded" aria-label="Sort news">
+                            <option value="newest">Newest first</option>
+                            <option value="oldest">Oldest first</option>
+                        </select>
                     </div>
                 </div>
                 <div id="news-list" class="space-y-4"></div>
@@ -209,14 +225,17 @@
 
     <section id="chatbot" class="chatbot" aria-label="Gov-Ent assistant">
         <button id="chatbot-toggle" class="chatbot-toggle" type="button" aria-label="Open assistant">
-            <span>?</span>
+            <span class="chatbot-toggle-core">AI</span>
         </button>
 
         <div id="chatbot-panel" class="chatbot-panel hidden">
             <div class="chatbot-header">
-                <div>
+                <div class="chatbot-title-row">
+                    <span class="chatbot-avatar" aria-hidden="true">AI</span>
+                    <div>
                     <p class="chatbot-kicker">Gov-Ent Assistant</p>
                     <h2>How can I help?</h2>
+                    </div>
                 </div>
                 <button id="chatbot-close" class="chatbot-close" type="button" aria-label="Close assistant">x</button>
             </div>
