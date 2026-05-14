@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gov-Ent Link</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
+
+    <div id="auth-view" class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+            <h1 class="text-2xl font-bold mb-6 text-center text-blue-600">Gov-Ent Link</h1>
+
+            <form id="login-form" class="space-y-4">
+                <h2 class="text-xl font-semibold">Login</h2>
+                <input type="email" id="login-email" placeholder="Email" required
+                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+                <input type="password" id="login-password" placeholder="Password" required
+                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+                <button type="submit"
+                    class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Login</button>
+                <p class="text-sm text-center mt-4">Don't have an account? <span id="show-register"
+                        class="text-blue-600 cursor-pointer">Register</span></p>
+            </form>
+
+            <form id="register-form" class="space-y-4 hidden">
+                <h2 class="text-xl font-semibold">Register</h2>
+                <input type="text" id="reg-name" placeholder="Full Name" required
+                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+                <input type="email" id="reg-email" placeholder="Email" required
+                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+                <input type="password" id="reg-password" placeholder="Password" required
+                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+                <select id="reg-role" class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+                    <option value="entrepreneur">Entrepreneur</option>
+                    <option value="admin">Government Admin</option>
+                </select>
+                <button type="submit"
+                    class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Register</button>
+                <p class="text-sm text-center mt-4">Already have an account? <span id="show-login"
+                        class="text-blue-600 cursor-pointer">Login</span></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard-view" class="hidden min-h-screen flex flex-col">
+        <nav class="bg-blue-600 text-white p-4 flex justify-between items-center shadow-md">
+            <div class="brand-block">
+                <h1 class="text-xl font-bold">Gov-Ent Link</h1>
+                <span id="profile-role" class="profile-role">Dashboard</span>
+            </div>
+            <div class="nav-actions space-x-4">
+                <button id="nav-dash" class="hover:underline font-semibold">Dashboard</button>
+                <button id="nav-challenges" class="hover:underline font-semibold hidden">Gov Challenges</button>
+                <button id="nav-resources" class="hover:underline font-semibold">Resources</button>
+                <button id="nav-news" class="hover:underline font-semibold">News</button>
+                <button id="logout-btn" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">Logout</button>
+            </div>
+            <div id="user-profile" class="user-profile">
+                <span class="online-dot" aria-hidden="true"></span>
+                <div>
+                    <strong id="profile-name">User</strong>
+                    <span>Online</span>
+                </div>
+            </div>
+        </nav>
+
+        <main class="flex-grow p-8 max-w-7xl mx-auto w-full">
+
+            <div id="section-dash">
+                <div id="admin-panel" class="hidden space-y-8">
+                    <div class="dashboard-grid">
+                        <div class="bg-white p-6 rounded shadow insight-panel">
+                            <span class="section-kicker">Government Overview</span>
+                            <h2 class="text-2xl font-bold mb-4">Pitch Intelligence</h2>
+                            <div id="admin-stats" class="stats-grid"></div>
+                            <div id="admin-chart" class="chart-panel"></div>
+                        </div>
+                        <div class="bg-white p-6 rounded shadow">
+                            <span class="section-kicker">Challenge Desk</span>
+                            <h2 class="text-2xl font-bold mb-4">Post a Government Problem</h2>
+                            <form id="problem-form" class="space-y-4">
+                                <input type="text" id="prob-title" placeholder="Problem Title" required
+                                    class="w-full px-4 py-2 border rounded">
+                                <input type="text" id="prob-dept" placeholder="Department (e.g., Transportation)"
+                                    required class="w-full px-4 py-2 border rounded">
+                                <textarea id="prob-desc" placeholder="Detailed Description" required
+                                    class="w-full px-4 py-2 border rounded h-24"></textarea>
+                                <button type="submit"
+                                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Post
+                                    Problem</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded shadow">
+                        <div class="section-heading">
+                            <div>
+                                <span class="section-kicker">Review Queue</span>
+                                <h2 class="text-2xl font-bold mb-4">Incoming Pitches</h2>
+                            </div>
+                            <div class="filter-row">
+                                <input type="text" id="pitch-tag-filter" placeholder="Filter by tag"
+                                    class="px-4 py-2 border rounded">
+                                <select id="pitch-status-filter" class="px-4 py-2 border rounded">
+                                    <option value="all">All Statuses</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="admin-pitches-list" class="space-y-4"></div>
+                    </div>
+                </div>
+
+                <div id="entrepreneur-panel" class="hidden space-y-8">
+                    <div class="dashboard-grid">
+                        <div class="bg-white p-6 rounded shadow insight-panel">
+                            <span class="section-kicker">Founder Dashboard</span>
+                            <h2 class="text-2xl font-bold mb-4">Progress Tracking</h2>
+                            <div id="entrepreneur-stats" class="stats-grid"></div>
+                            <div id="entrepreneur-chart" class="chart-panel"></div>
+                        </div>
+                        <div class="bg-white p-6 rounded shadow">
+                            <span class="section-kicker">New Proposal</span>
+                            <h2 class="text-2xl font-bold mb-4">Submit a Pitch</h2>
+                            <form id="pitch-form" class="space-y-4">
+                                <input type="text" id="pitch-title" placeholder="Project Title" required
+                                    class="w-full px-4 py-2 border rounded">
+                                <input type="text" id="pitch-tags" placeholder="Tags (e.g., ai, mobility, health)"
+                                    class="w-full px-4 py-2 border rounded">
+                                <textarea id="pitch-desc" placeholder="Solution Description" required
+                                    class="w-full px-4 py-2 border rounded h-24"></textarea>
+                                <button type="submit"
+                                    class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Submit
+                                    Pitch</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded shadow">
+                        <span class="section-kicker">Feedback Loop</span>
+                        <h2 class="text-2xl font-bold mb-4">My Pitch Status</h2>
+                        <div id="my-pitches-list" class="space-y-4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-challenges" class="hidden bg-white p-6 rounded shadow">
+                <div class="section-heading">
+                    <div>
+                        <span class="section-kicker">Entrepreneur Tasks</span>
+                        <h2 class="text-2xl font-bold mb-4">Active Government Challenges</h2>
+                    </div>
+                    <input type="text" id="challenge-search" placeholder="Search challenges or departments"
+                        class="px-4 py-2 border rounded">
+                </div>
+                <div id="ent-problems-list" class="challenge-grid"></div>
+            </div>
+
+            <div id="section-resources" class="hidden bg-white p-6 rounded shadow">
+                <div class="section-heading">
+                    <div>
+                        <span class="section-kicker">Knowledge Base</span>
+                        <h2 class="text-2xl font-bold mb-6">Startup Schemes & Laws</h2>
+                    </div>
+                    <div class="filter-row">
+                        <input type="search" id="resource-search" placeholder="Search schemes or laws"
+                            class="px-4 py-2 border rounded">
+                        <select id="resource-category-filter" class="px-4 py-2 border rounded">
+                            <option value="all">All Types</option>
+                            <option value="scheme">Schemes</option>
+                            <option value="registration">Registration</option>
+                            <option value="law / tax">Laws / Tax</option>
+                            <option value="compliance">Compliance</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="resources-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+
+            <div id="section-news" class="hidden bg-white p-6 rounded shadow">
+                <div class="section-heading">
+                    <div>
+                        <span class="section-kicker">Industry Radar</span>
+                        <h2 class="text-2xl font-bold mb-6">News</h2>
+                    </div>
+                    <div class="filter-row news-filters">
+                        <select id="news-domain-filter" class="px-4 py-2 border rounded">
+                            <option value="technology">Technology</option>
+                            <option value="ai">AI</option>
+                            <option value="business">Business</option>
+                            <option value="startups">Startups</option>
+                            <option value="cybersecurity">Cybersecurity</option>
+                            <option value="fintech">Fintech</option>
+                        </select>
+                        <input type="date" id="news-date-filter" class="px-4 py-2 border rounded">
+                        <input type="date" id="news-start-date" class="px-4 py-2 border rounded">
+                        <input type="date" id="news-end-date" class="px-4 py-2 border rounded">
+                    </div>
+                </div>
+                <div id="news-list" class="space-y-4"></div>
+            </div>
+
+        </main>
+    </div>
+
+    <section id="chatbot" class="chatbot" aria-label="Gov-Ent assistant">
+        <button id="chatbot-toggle" class="chatbot-toggle" type="button" aria-label="Open assistant">
+            <span>?</span>
+        </button>
+
+        <div id="chatbot-panel" class="chatbot-panel hidden">
+            <div class="chatbot-header">
+                <div>
+                    <p class="chatbot-kicker">Gov-Ent Assistant</p>
+                    <h2>How can I help?</h2>
+                </div>
+                <button id="chatbot-close" class="chatbot-close" type="button" aria-label="Close assistant">x</button>
+            </div>
+
+            <div id="chatbot-messages" class="chatbot-messages"></div>
+
+            <div class="chatbot-suggestions">
+                <button type="button" data-question="How do I submit a pitch?">Pitch</button>
+                <button type="button" data-question="Which startup schemes should I check?">Schemes</button>
+                <button type="button" data-question="Why is login not working?">Login help</button>
+            </div>
+
+            <form id="chatbot-form" class="chatbot-form">
+                <input id="chatbot-input" type="text" placeholder="Ask about schemes, pitches, login..."
+                    autocomplete="off">
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </section>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
