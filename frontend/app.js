@@ -46,6 +46,9 @@ const DOM = {
     pitchTagFilter: document.getElementById('pitch-tag-filter'),
     pitchStatusFilter: document.getElementById('pitch-status-filter'),
     challengeSearch: document.getElementById('challenge-search'),
+    dashboardProblemsList: document.getElementById('dashboard-problems-list'),
+    notificationList: document.getElementById('notification-list'),
+    themeToggle: document.getElementById('theme-toggle'),
     chatbotToggle: document.getElementById('chatbot-toggle'),
     chatbotPanel: document.getElementById('chatbot-panel'),
     chatbotClose: document.getElementById('chatbot-close'),
@@ -53,6 +56,13 @@ const DOM = {
     chatbotForm: document.getElementById('chatbot-form'),
     chatbotInput: document.getElementById('chatbot-input')
 };
+
+const notificationToggle = document.getElementById('notification-toggle');
+const notificationDropdown = document.getElementById('notification-dropdown');
+const notificationBadge = document.getElementById('notification-badge');
+const markAllReadButton = document.getElementById('mark-all-read');
+const avatar = document.querySelector('.avatar');
+const notificationReadIds = new Set(JSON.parse(localStorage.getItem('readNotifications') || '[]'));
 
 const staticResources = [
     {
@@ -131,8 +141,10 @@ let adminPitches = [];
 let entrepreneurPitches = [];
 let governmentProblems = [];
 let newsArticles = [];
+let dashboardPollId = null;
 
 function init() {
+    applySavedTheme();
     const token = localStorage.getItem('token');
     if (token) {
         showDashboard();
@@ -201,6 +213,46 @@ DOM.chatbotToggle.addEventListener('click', openChatbot);
 DOM.chatbotClose.addEventListener('click', closeChatbot);
 DOM.chatbotForm.addEventListener('submit', handleChatbotSubmit);
 
+if (notificationToggle && notificationDropdown) {
+    notificationToggle.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const isOpen = !notificationDropdown.classList.contains('hidden');
+        notificationDropdown.classList.toggle('hidden', isOpen);
+        notificationToggle.setAttribute('aria-expanded', String(!isOpen));
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!notificationDropdown.contains(event.target) && !notificationToggle.contains(event.target)) {
+            notificationDropdown.classList.add('hidden');
+            notificationToggle.setAttribute('aria-expanded', 'false');
+        }
+    });
+}
+
+if (markAllReadButton) {
+    markAllReadButton.addEventListener('click', () => {
+        getNotifications().forEach((notification) => notificationReadIds.add(notification.id));
+        persistReadNotifications();
+        renderNotifications();
+    });
+}
+
+if (DOM.notificationList) {
+    DOM.notificationList.addEventListener('click', (event) => {
+        const button = event.target.closest('.mark-read');
+        if (!button) return;
+
+        event.stopPropagation();
+        notificationReadIds.add(button.dataset.notificationId);
+        persistReadNotifications();
+        renderNotifications();
+    });
+}
+
+if (DOM.themeToggle) {
+    DOM.themeToggle.addEventListener('click', toggleTheme);
+}
+
 document.querySelectorAll('[data-question]').forEach((button) => {
     button.addEventListener('click', () => {
         askChatbot(button.dataset.question);
@@ -236,6 +288,7 @@ function switchTab(tab) {
 }
 
 function showAuth() {
+    stopDashboardPolling();
     DOM.authView.classList.remove('hidden');
     DOM.dashboardView.classList.add('hidden');
     DOM.loginForm.classList.remove('hidden');
@@ -253,6 +306,7 @@ function showDashboard() {
 
     DOM.profileName.textContent = name;
     DOM.profileRole.textContent = role === 'admin' ? 'Government Official' : 'Entrepreneur';
+    if (avatar) avatar.textContent = getInitials(name);
     DOM.navChallenges.classList.toggle('hidden', role !== 'entrepreneur');
 
     if (role === 'admin') {
@@ -265,6 +319,9 @@ function showDashboard() {
         fetchProblems();
         fetchMyPitches();
     }
+
+    renderNotifications();
+    startDashboardPolling(role);
 }
 
 DOM.loginForm.addEventListener('submit', async (e) => {
@@ -402,6 +459,7 @@ async function fetchPitches() {
         adminPitches = Array.isArray(data) ? data : [];
         renderPitches();
         renderDashboardAnalytics('admin');
+        renderNotifications();
     } catch (error) {
         console.error('Error fetching pitches', error);
     }
@@ -416,6 +474,7 @@ async function fetchProblems() {
         governmentProblems = Array.isArray(data) ? data : [];
         renderProblems();
         renderDashboardAnalytics('entrepreneur');
+        renderNotifications();
     } catch (error) {
         console.error('Error fetching problems', error);
     }
@@ -430,9 +489,36 @@ async function fetchMyPitches() {
         entrepreneurPitches = Array.isArray(data) ? data : [];
         renderMyPitches();
         renderDashboardAnalytics('entrepreneur');
+        renderNotifications();
     } catch (error) {
         console.error('Error fetching submitted pitches', error);
     }
+}
+
+function startDashboardPolling(role) {
+    stopDashboardPolling();
+
+    dashboardPollId = window.setInterval(() => {
+        if (!localStorage.getItem('token') || DOM.dashboardView.classList.contains('hidden')) {
+            stopDashboardPolling();
+            return;
+        }
+
+        if (role === 'admin') {
+            fetchPitches();
+            return;
+        }
+
+        fetchProblems();
+        fetchMyPitches();
+    }, 3000);
+}
+
+function stopDashboardPolling() {
+    if (!dashboardPollId) return;
+
+    window.clearInterval(dashboardPollId);
+    dashboardPollId = null;
 }
 
 function renderPitches() {
@@ -476,7 +562,10 @@ function renderPitches() {
 }
 
 function renderProblems() {
-    DOM.entProblemsList.innerHTML = '';
+    const targets = [DOM.entProblemsList, DOM.dashboardProblemsList].filter(Boolean);
+    targets.forEach((target) => {
+        target.innerHTML = '';
+    });
 
     const query = DOM.challengeSearch.value.trim().toLowerCase();
     const filteredProblems = governmentProblems.filter((prob) => {
@@ -485,20 +574,24 @@ function renderProblems() {
     });
 
     if (filteredProblems.length === 0) {
-        DOM.entProblemsList.innerHTML = '<p class="empty-state">No active government challenges found.</p>';
+        targets.forEach((target) => {
+            target.innerHTML = '<p class="empty-state">No active government challenges found.</p>';
+        });
         return;
     }
 
-    filteredProblems.forEach(prob => {
-        const div = document.createElement('div');
-        div.className = 'challenge-card border p-4 rounded bg-gray-50';
-        div.innerHTML = `
+    targets.forEach((target) => {
+        filteredProblems.forEach(prob => {
+            const div = document.createElement('div');
+            div.className = 'challenge-card border p-4 rounded bg-gray-50';
+            div.innerHTML = `
       <span class="resource-category">Active Task</span>
       <h3 class="font-bold text-lg">${escapeHtml(prob.title)}</h3>
       <p class="text-sm text-blue-600 mb-2 font-semibold">Dept: ${escapeHtml(prob.department)}</p>
       <p>${escapeHtml(prob.description)}</p>
     `;
-        DOM.entProblemsList.appendChild(div);
+            target.appendChild(div);
+        });
     });
 }
 
@@ -728,6 +821,103 @@ function renderTags(tags) {
     }
 
     return tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('');
+}
+
+function updateNotificationBadge() {
+    if (!notificationBadge) return;
+
+    const unreadCount = getNotifications().filter((notification) => !notificationReadIds.has(notification.id)).length;
+    notificationBadge.textContent = unreadCount;
+    notificationBadge.classList.toggle('hidden', unreadCount === 0);
+}
+
+function renderNotifications() {
+    if (!DOM.notificationList) return;
+
+    const notifications = getNotifications();
+    DOM.notificationList.innerHTML = '';
+
+    if (notifications.length === 0) {
+        DOM.notificationList.innerHTML = '<p class="notification-empty">No notifications yet.</p>';
+        updateNotificationBadge();
+        return;
+    }
+
+    notifications.forEach((notification) => {
+        const isUnread = !notificationReadIds.has(notification.id);
+        const item = document.createElement('article');
+        item.className = `notification-item${isUnread ? ' unread' : ''}`;
+        item.innerHTML = `
+            <div>
+                <strong>${escapeHtml(notification.title)}</strong>
+                <p>${escapeHtml(notification.body)}</p>
+            </div>
+            ${isUnread ? `<button type="button" class="mark-read" data-notification-id="${escapeHtml(notification.id)}">Mark as read</button>` : ''}
+        `;
+        DOM.notificationList.appendChild(item);
+    });
+
+    updateNotificationBadge();
+}
+
+function getNotifications() {
+    const role = localStorage.getItem('role');
+
+    if (role === 'admin') {
+        return adminPitches.map((pitch) => ({
+            id: `pitch-${pitch._id || pitch.title}`,
+            title: 'New pitch in your inbox',
+            body: `${pitch.entrepreneurId?.name || 'An entrepreneur'} submitted "${pitch.title || 'a proposal'}".`
+        }));
+    }
+
+    const pitchStatusNotifications = entrepreneurPitches
+        .filter((pitch) => ['approved', 'rejected'].includes(pitch.status))
+        .map((pitch) => ({
+            id: `pitch-status-${pitch._id || pitch.title}-${pitch.status}`,
+            title: pitch.status === 'approved' ? 'Your proposal was approved' : 'Your proposal was rejected',
+            body: `"${pitch.title || 'Your proposal'}" is now ${pitch.status}. ${pitch.adminFeedback || ''}`.trim()
+        }));
+
+    const challengeNotifications = governmentProblems.map((problem) => ({
+        id: `challenge-${problem._id || problem.title}`,
+        title: 'New government challenge posted',
+        body: `${problem.department || 'A government department'} posted "${problem.title || 'a new challenge'}".`
+    }));
+
+    return [...pitchStatusNotifications, ...challengeNotifications];
+}
+
+function persistReadNotifications() {
+    localStorage.setItem('readNotifications', JSON.stringify([...notificationReadIds]));
+}
+
+function applySavedTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.body.classList.toggle('light-theme', savedTheme === 'light');
+    updateThemeToggleLabel();
+}
+
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light-theme');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    updateThemeToggleLabel();
+}
+
+function updateThemeToggleLabel() {
+    if (!DOM.themeToggle) return;
+
+    const isLight = document.body.classList.contains('light-theme');
+    DOM.themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+}
+
+function getInitials(name) {
+    return String(name || 'User')
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() || '')
+        .join('') || 'GE';
 }
 
 function escapeHtml(value) {

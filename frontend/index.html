@@ -5,183 +5,252 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gov-Ent Link</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
+<body class="font-sans min-h-screen">
+    <div class="mesh-bg" aria-hidden="true"></div>
 
-    <div id="auth-view" class="flex items-center justify-center min-h-screen">
-        <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-            <h1 class="text-2xl font-bold mb-6 text-center text-blue-600">Gov-Ent Link</h1>
+    <div id="auth-view" class="auth-view">
+        <div class="auth-card">
+            <div class="auth-brand">
+                <span class="brand-mark" aria-hidden="true"></span>
+                <div>
+                    <h1>Gov-Ent Link</h1>
+                    <p>Government collaboration desk for Indian founders</p>
+                </div>
+            </div>
 
-            <form id="login-form" class="space-y-4">
-                <h2 class="text-xl font-semibold">Login</h2>
-                <input type="email" id="login-email" placeholder="Email" required
-                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
-                <input type="password" id="login-password" placeholder="Password" required
-                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+            <form id="login-form" class="auth-form">
+                <h2>Login</h2>
+                <input type="email" id="login-email" placeholder="Email" required>
+                <input type="password" id="login-password" placeholder="Password" required>
                 <p id="login-message" class="form-message hidden"></p>
-                <button type="submit"
-                    class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Login</button>
+                <button type="submit" class="primary-button">Login</button>
                 <button type="button" id="forgot-password-btn" class="link-button">Forgot password?</button>
-                <p class="text-sm text-center mt-4">Don't have an account? <span id="show-register"
-                        class="text-blue-600 cursor-pointer">Register</span></p>
+                <p class="auth-switch">Don't have an account? <span id="show-register">Register</span></p>
             </form>
 
-            <form id="forgot-form" class="space-y-4 hidden">
-                <h2 class="text-xl font-semibold">Reset Password</h2>
-                <p class="text-sm text-gray-600">Enter your account email to start password recovery.</p>
-                <input type="email" id="forgot-email" placeholder="Email" required
-                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+            <form id="forgot-form" class="auth-form hidden">
+                <h2>Reset Password</h2>
+                <p class="subcopy">Enter your account email to start password recovery.</p>
+                <input type="email" id="forgot-email" placeholder="Email" required>
                 <p id="forgot-message" class="form-message hidden"></p>
-                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Continue</button>
+                <button type="submit" class="primary-button">Continue</button>
                 <button type="button" id="back-to-login" class="link-button">Back to login</button>
             </form>
 
-            <form id="register-form" class="space-y-4 hidden">
-                <h2 class="text-xl font-semibold">Register</h2>
-                <input type="text" id="reg-name" placeholder="Full Name" required
-                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
-                <input type="email" id="reg-email" placeholder="Email" required
-                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
-                <input type="password" id="reg-password" placeholder="Password" required
-                    class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
-                <select id="reg-role" class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+            <form id="register-form" class="auth-form hidden">
+                <h2>Register</h2>
+                <input type="text" id="reg-name" placeholder="Full Name" required>
+                <input type="email" id="reg-email" placeholder="Email" required>
+                <input type="password" id="reg-password" placeholder="Password" required>
+                <select id="reg-role">
                     <option value="entrepreneur">Entrepreneur</option>
                     <option value="admin">Government Admin</option>
                 </select>
-                <button type="submit"
-                    class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Register</button>
-                <p class="text-sm text-center mt-4">Already have an account? <span id="show-login"
-                        class="text-blue-600 cursor-pointer">Login</span></p>
+                <button type="submit" class="primary-button">Register</button>
+                <p class="auth-switch">Already have an account? <span id="show-login">Login</span></p>
             </form>
         </div>
     </div>
 
-    <div id="dashboard-view" class="hidden min-h-screen flex flex-col">
-        <nav class="bg-blue-600 text-white p-4 flex justify-between items-center shadow-md">
-            <div class="brand-block">
-                <h1 class="text-xl font-bold">Gov-Ent Link</h1>
-                <span id="profile-role" class="profile-role">Dashboard</span>
-            </div>
-            <div class="nav-actions space-x-4">
-                <button id="nav-dash" class="hover:underline font-semibold">Dashboard</button>
-                <button id="nav-challenges" class="hover:underline font-semibold hidden">Gov Challenges</button>
-                <button id="nav-resources" class="hover:underline font-semibold">Resources</button>
-                <button id="nav-news" class="hover:underline font-semibold">News</button>
-                <button id="logout-btn" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">Logout</button>
-            </div>
-            <div id="user-profile" class="user-profile">
-                <span class="online-dot" aria-hidden="true"></span>
-                <div>
-                    <strong id="profile-name">User</strong>
-                    <span>Online</span>
+    <div id="dashboard-view" class="hidden min-h-screen">
+        <nav class="topbar">
+            <div class="topbar-left">
+                <div class="brand-block">
+                    <span class="brand-mark" aria-hidden="true"></span>
+                    <div>
+                        <h1>Gov-Ent Link</h1>
+                        <span id="profile-role" class="profile-role">Dashboard</span>
+                    </div>
                 </div>
+                <div class="nav-actions">
+                    <button id="nav-dash" type="button">Dashboard</button>
+                    <button id="nav-challenges" type="button" class="hidden">Gov Challenges</button>
+                    <button id="nav-resources" type="button">Resources</button>
+                    <button id="nav-news" type="button">News</button>
+                </div>
+            </div>
+
+            <div class="topbar-right">
+                <button id="theme-toggle" class="icon-button" type="button" aria-label="Switch to light mode">
+                    <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <path d="M12 2v2"></path>
+                        <path d="M12 20v2"></path>
+                        <path d="m4.93 4.93 1.41 1.41"></path>
+                        <path d="m17.66 17.66 1.41 1.41"></path>
+                        <path d="M2 12h2"></path>
+                        <path d="M20 12h2"></path>
+                        <path d="m6.34 17.66-1.41 1.41"></path>
+                        <path d="m19.07 4.93-1.41 1.41"></path>
+                    </svg>
+                    <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3a6 6 0 0 0 9 7.4A9 9 0 1 1 12 3Z"></path>
+                    </svg>
+                </button>
+                <div class="notification-system">
+                    <button id="notification-toggle" class="icon-button" type="button" aria-label="Open notifications" aria-expanded="false">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <span id="notification-badge" class="notification-badge hidden">0</span>
+                    </button>
+                    <div id="notification-dropdown" class="notification-dropdown hidden">
+                        <div class="notification-head">
+                            <h2>Notifications</h2>
+                            <button id="mark-all-read" type="button">Mark all as read</button>
+                        </div>
+                        <div id="notification-list" class="notification-list"></div>
+                    </div>
+                </div>
+                <div id="user-profile" class="user-profile">
+                    <span class="avatar" aria-hidden="true">GE</span>
+                    <span class="online-dot" aria-hidden="true"></span>
+                    <div>
+                        <strong id="profile-name">User</strong>
+                        <span>Online</span>
+                    </div>
+                </div>
+                <button id="logout-btn" class="logout-button" type="button">Logout</button>
             </div>
         </nav>
 
-        <main class="flex-grow p-8 max-w-7xl mx-auto w-full">
-
-            <div id="section-dash">
-                <div id="admin-panel" class="hidden space-y-8">
-                    <div class="dashboard-grid">
-                        <div class="bg-white p-6 rounded shadow insight-panel">
+        <main class="dashboard-main">
+            <section id="section-dash">
+                <div id="admin-panel" class="hidden dashboard-role-panel">
+                    <div class="dashboard-left">
+                        <section class="glass-panel insight-panel">
                             <span class="section-kicker">Government Overview</span>
-                            <h2 class="text-2xl font-bold mb-4">Pitch Intelligence</h2>
+                            <div class="section-heading">
+                                <h2>Pitch Intelligence</h2>
+                                <span class="live-chip">Live review</span>
+                            </div>
                             <div id="admin-stats" class="stats-grid"></div>
                             <div id="admin-chart" class="chart-panel"></div>
-                        </div>
-                        <div class="bg-white p-6 rounded shadow">
+                        </section>
+
+                        <section class="glass-panel feed-panel">
+                            <div class="section-heading">
+                                <div>
+                                    <span class="section-kicker">Review Queue</span>
+                                    <h2>Incoming Pitches</h2>
+                                </div>
+                                <div class="filter-row">
+                                    <input type="text" id="pitch-tag-filter" placeholder="Filter by tag">
+                                    <select id="pitch-status-filter">
+                                        <option value="all">All Statuses</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="approved">Approved</option>
+                                        <option value="rejected">Rejected</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="admin-pitches-list" class="feed-list"></div>
+                        </section>
+                    </div>
+
+                    <aside class="dashboard-right">
+                        <section class="form-panel">
                             <span class="section-kicker">Challenge Desk</span>
-                            <h2 class="text-2xl font-bold mb-4">Post a Government Problem</h2>
-                            <form id="problem-form" class="space-y-4">
-                                <input type="text" id="prob-title" placeholder="Problem Title" required
-                                    class="w-full px-4 py-2 border rounded">
-                                <input type="text" id="prob-dept" placeholder="Department (e.g., Transportation)"
-                                    required class="w-full px-4 py-2 border rounded">
-                                <textarea id="prob-desc" placeholder="Detailed Description" required
-                                    class="w-full px-4 py-2 border rounded h-24"></textarea>
-                                <button type="submit"
-                                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Post
-                                    Problem</button>
+                            <h2>Post a Government Problem</h2>
+                            <form id="problem-form" class="stacked-form">
+                                <input type="text" id="prob-title" placeholder="Problem Title" required>
+                                <input type="text" id="prob-dept" placeholder="Department (e.g., Transportation)" required>
+                                <textarea id="prob-desc" placeholder="Detailed Description" required></textarea>
+                                <button type="submit" class="primary-button">Post Problem</button>
                             </form>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded shadow">
-                        <div class="section-heading">
+                        </section>
+
+                        <section class="ai-widget">
+                            <div class="ai-orb">AI</div>
                             <div>
-                                <span class="section-kicker">Review Queue</span>
-                                <h2 class="text-2xl font-bold mb-4">Incoming Pitches</h2>
+                                <span class="section-kicker">Policy Assistant</span>
+                                <h2>Surface fit signals faster</h2>
+                                <p>Use the assistant to compare pitch tags with ministries, schemes, and review criteria.</p>
                             </div>
-                            <div class="filter-row">
-                                <input type="text" id="pitch-tag-filter" placeholder="Filter by tag"
-                                    class="px-4 py-2 border rounded">
-                                <select id="pitch-status-filter" class="px-4 py-2 border rounded">
-                                    <option value="all">All Statuses</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="approved">Approved</option>
-                                    <option value="rejected">Rejected</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div id="admin-pitches-list" class="space-y-4"></div>
-                    </div>
+                        </section>
+                    </aside>
                 </div>
 
-                <div id="entrepreneur-panel" class="hidden space-y-8">
-                    <div class="dashboard-grid">
-                        <div class="bg-white p-6 rounded shadow insight-panel">
+                <div id="entrepreneur-panel" class="hidden dashboard-role-panel">
+                    <div class="dashboard-left">
+                        <section class="glass-panel insight-panel">
                             <span class="section-kicker">Founder Dashboard</span>
-                            <h2 class="text-2xl font-bold mb-4">Progress Tracking</h2>
+                            <div class="section-heading">
+                                <h2>Progress Tracking</h2>
+                                <span class="live-chip">Approval flow</span>
+                            </div>
                             <div id="entrepreneur-stats" class="stats-grid"></div>
                             <div id="entrepreneur-chart" class="chart-panel"></div>
-                        </div>
-                        <div class="bg-white p-6 rounded shadow">
-                            <span class="section-kicker">New Proposal</span>
-                            <h2 class="text-2xl font-bold mb-4">Submit a Pitch</h2>
-                            <form id="pitch-form" class="space-y-4">
-                                <input type="text" id="pitch-title" placeholder="Project Title" required
-                                    class="w-full px-4 py-2 border rounded">
-                                <input type="text" id="pitch-tags" placeholder="Tags (e.g., ai, mobility, health)"
-                                    class="w-full px-4 py-2 border rounded">
-                                <textarea id="pitch-desc" placeholder="Solution Description" required
-                                    class="w-full px-4 py-2 border rounded h-24"></textarea>
-                                <button type="submit"
-                                    class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Submit
-                                    Pitch</button>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded shadow">
-                        <span class="section-kicker">Feedback Loop</span>
-                        <h2 class="text-2xl font-bold mb-4">My Pitch Status</h2>
-                        <div id="my-pitches-list" class="space-y-4"></div>
-                    </div>
-                </div>
-            </div>
+                        </section>
 
-            <div id="section-challenges" class="hidden bg-white p-6 rounded shadow">
+                        <section class="glass-panel feed-panel">
+                            <div class="section-heading">
+                                <div>
+                                    <span class="section-kicker">Government Challenges Feed</span>
+                                    <h2>Active Challenges</h2>
+                                </div>
+                            </div>
+                            <div id="dashboard-problems-list" class="feed-list"></div>
+                        </section>
+
+                        <section class="glass-panel feed-panel">
+                            <span class="section-kicker">Feedback Loop</span>
+                            <h2>My Pitch Status</h2>
+                            <div id="my-pitches-list" class="feed-list"></div>
+                        </section>
+                    </div>
+
+                    <aside class="dashboard-right">
+                        <section class="form-panel">
+                            <span class="section-kicker">New Proposal</span>
+                            <h2>Submit a Pitch</h2>
+                            <form id="pitch-form" class="stacked-form">
+                                <input type="text" id="pitch-title" placeholder="Project Title" required>
+                                <input type="text" id="pitch-tags" placeholder="Tags (e.g., ai, mobility, health)">
+                                <textarea id="pitch-desc" placeholder="Solution Description" required></textarea>
+                                <button type="submit" class="primary-button">Submit Pitch</button>
+                            </form>
+                        </section>
+
+                        <section class="ai-widget">
+                            <div class="ai-orb">AI</div>
+                            <div>
+                                <span class="section-kicker">AI Assistant</span>
+                                <h2>Strengthen your submission</h2>
+                                <p>Ask about schemes, ministries, eligibility, or how to sharpen your problem fit before submitting.</p>
+                            </div>
+                        </section>
+                    </aside>
+                </div>
+            </section>
+
+            <section id="section-challenges" class="hidden glass-panel full-panel">
                 <div class="section-heading">
                     <div>
                         <span class="section-kicker">Entrepreneur Tasks</span>
-                        <h2 class="text-2xl font-bold mb-4">Active Government Challenges</h2>
+                        <h2>Active Government Challenges</h2>
                     </div>
-                    <input type="text" id="challenge-search" placeholder="Search challenges or departments"
-                        class="px-4 py-2 border rounded">
+                    <input type="text" id="challenge-search" placeholder="Search challenges or departments">
                 </div>
                 <div id="ent-problems-list" class="challenge-grid"></div>
-            </div>
+            </section>
 
-            <div id="section-resources" class="hidden bg-white p-6 rounded shadow">
+            <section id="section-resources" class="hidden glass-panel full-panel">
                 <div class="section-heading">
                     <div>
                         <span class="section-kicker">Knowledge Base</span>
-                        <h2 class="text-2xl font-bold mb-6">Startup Schemes & Laws</h2>
+                        <h2>Startup Schemes & Laws</h2>
                     </div>
                     <div class="filter-row">
-                        <input type="search" id="resource-search" placeholder="Search schemes or laws"
-                            class="px-4 py-2 border rounded">
-                        <select id="resource-category-filter" class="px-4 py-2 border rounded">
+                        <input type="search" id="resource-search" placeholder="Search schemes or laws">
+                        <select id="resource-category-filter">
                             <option value="all">All Types</option>
                             <option value="scheme">Schemes</option>
                             <option value="registration">Registration</option>
@@ -190,17 +259,17 @@
                         </select>
                     </div>
                 </div>
-                <div id="resources-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-            </div>
+                <div id="resources-list" class="resource-grid"></div>
+            </section>
 
-            <div id="section-news" class="hidden bg-white p-6 rounded shadow">
+            <section id="section-news" class="hidden glass-panel full-panel">
                 <div class="section-heading">
                     <div>
                         <span class="section-kicker">Industry Radar</span>
-                        <h2 class="text-2xl font-bold mb-6">News</h2>
+                        <h2>News</h2>
                     </div>
                     <div class="filter-row news-filters">
-                        <select id="news-domain-filter" class="px-4 py-2 border rounded">
+                        <select id="news-domain-filter">
                             <option value="startup-business-fintech">Startup, Business & Fintech</option>
                             <option value="technology">Technology</option>
                             <option value="ai">AI</option>
@@ -209,17 +278,16 @@
                             <option value="cybersecurity">Cybersecurity</option>
                             <option value="fintech">Fintech</option>
                         </select>
-                        <input type="date" id="news-start-date" class="px-4 py-2 border rounded" aria-label="Start date">
-                        <input type="date" id="news-end-date" class="px-4 py-2 border rounded" aria-label="End date">
-                        <select id="news-sort-filter" class="px-4 py-2 border rounded" aria-label="Sort news">
+                        <input type="date" id="news-start-date" aria-label="Start date">
+                        <input type="date" id="news-end-date" aria-label="End date">
+                        <select id="news-sort-filter" aria-label="Sort news">
                             <option value="newest">Newest first</option>
                             <option value="oldest">Oldest first</option>
                         </select>
                     </div>
                 </div>
-                <div id="news-list" class="space-y-4"></div>
-            </div>
-
+                <div id="news-list" class="feed-list"></div>
+            </section>
         </main>
     </div>
 
@@ -233,8 +301,8 @@
                 <div class="chatbot-title-row">
                     <span class="chatbot-avatar" aria-hidden="true">AI</span>
                     <div>
-                    <p class="chatbot-kicker">Gov-Ent Assistant</p>
-                    <h2>How can I help?</h2>
+                        <p class="chatbot-kicker">Gov-Ent Assistant</p>
+                        <h2>How can I help?</h2>
                     </div>
                 </div>
                 <button id="chatbot-close" class="chatbot-close" type="button" aria-label="Close assistant">x</button>
@@ -249,8 +317,7 @@
             </div>
 
             <form id="chatbot-form" class="chatbot-form">
-                <input id="chatbot-input" type="text" placeholder="Ask about schemes, pitches, login..."
-                    autocomplete="off">
+                <input id="chatbot-input" type="text" placeholder="Ask about schemes, pitches, login..." autocomplete="off">
                 <button type="submit">Send</button>
             </form>
         </div>
