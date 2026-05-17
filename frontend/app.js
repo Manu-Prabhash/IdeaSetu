@@ -31,6 +31,7 @@ const DOM = {
     problemForm: document.getElementById('problem-form'),
     pitchForm: document.getElementById('pitch-form'),
     pitchTags: document.getElementById('pitch-tags'),
+    adminProblemsList: document.getElementById('admin-problems-list'),
     adminPitchesList: document.getElementById('admin-pitches-list'),
     entProblemsList: document.getElementById('ent-problems-list'),
     myPitchesList: document.getElementById('my-pitches-list'),
@@ -42,12 +43,18 @@ const DOM = {
     resourceSearch: document.getElementById('resource-search'),
     resourceCategoryFilter: document.getElementById('resource-category-filter'),
     newsList: document.getElementById('news-list'),
-    newsDomainFilter: document.getElementById('news-domain-filter'),
+    newsSearch: document.getElementById('news-search'),
+    newsCount: document.getElementById('news-count'),
+    newsLoading: document.getElementById('news-loading'),
+    newsApplyFilters: document.getElementById('news-apply-filters'),
+    newsTypeSelect: document.getElementById('news-type-select'),
     newsStartDate: document.getElementById('news-start-date'),
     newsEndDate: document.getElementById('news-end-date'),
     newsSortFilter: document.getElementById('news-sort-filter'),
     pitchTagFilter: document.getElementById('pitch-tag-filter'),
     pitchStatusFilter: document.getElementById('pitch-status-filter'),
+    challengeSectionKicker: document.getElementById('challenge-section-kicker'),
+    challengeSectionTitle: document.getElementById('challenge-section-title'),
     challengeSearch: document.getElementById('challenge-search'),
     dashboardProblemsList: document.getElementById('dashboard-problems-list'),
     notificationList: document.getElementById('notification-list'),
@@ -149,6 +156,48 @@ const staticResources = [
         desc: 'DPIIT-recognised startups can self-certify compliance under selected labour and environmental laws to reduce early compliance burden.',
         action: 'See Benefits',
         url: 'https://www.startupindia.gov.in/content/sih/en/startup-scheme.html'
+    },
+    {
+        category: 'Scheme',
+        title: 'Stand-Up India Scheme',
+        desc: 'Bank loan support for greenfield enterprises promoted by women and SC/ST entrepreneurs, useful for manufacturing, services, trading, and allied agriculture ventures.',
+        action: 'Open Stand-Up India',
+        url: 'https://www.standupmitra.in/'
+    },
+    {
+        category: 'Scheme',
+        title: 'PMEGP Credit-Linked Subsidy',
+        desc: 'Prime Minister Employment Generation Programme supports micro-enterprises through bank finance and margin money subsidy for eligible new projects.',
+        action: 'View PMEGP',
+        url: 'https://www.kviconline.gov.in/pmegpeportal/pmegphome/index.jsp'
+    },
+    {
+        category: 'Registration',
+        title: 'GeM Seller Registration',
+        desc: 'Government e-Marketplace registration helps businesses sell goods and services directly to government buyers through public procurement workflows.',
+        action: 'Register on GeM',
+        url: 'https://gem.gov.in/'
+    },
+    {
+        category: 'Scheme',
+        title: 'Credit Guarantee Scheme for MSEs',
+        desc: 'CGTMSE enables collateral-free credit support for eligible micro and small enterprises through member lending institutions.',
+        action: 'Explore CGTMSE',
+        url: 'https://www.cgtmse.in/'
+    },
+    {
+        category: 'Compliance',
+        title: 'MCA Company / LLP Services',
+        desc: 'Ministry of Corporate Affairs portal for company and LLP incorporation, filings, master data, and ongoing corporate compliance services.',
+        action: 'Open MCA',
+        url: 'https://www.mca.gov.in/content/mca/global/en/home.html'
+    },
+    {
+        category: 'Registration',
+        title: 'Intellectual Property India',
+        desc: 'Official portal for patents, trademarks, designs, and GI filings. Useful for startups protecting product names, inventions, and brand assets.',
+        action: 'Visit IP India',
+        url: 'https://ipindia.gov.in/'
     }
 ];
 
@@ -212,7 +261,7 @@ DOM.logoutBtn.addEventListener('click', () => {
 DOM.navDash.addEventListener('click', () => switchTab('dash'));
 DOM.navChallenges.addEventListener('click', () => {
     switchTab('challenges');
-    renderProblems();
+    fetchProblems();
 });
 DOM.navCollaboration.addEventListener('click', () => {
     switchTab('collaboration');
@@ -233,11 +282,12 @@ DOM.pitchStatusFilter.addEventListener('change', renderPitches);
 DOM.challengeSearch.addEventListener('input', renderProblems);
 DOM.resourceSearch.addEventListener('input', loadResources);
 DOM.resourceCategoryFilter.addEventListener('change', loadResources);
-DOM.newsDomainFilter.addEventListener('change', loadNews);
-DOM.newsStartDate.addEventListener('change', renderNews);
-DOM.newsEndDate.addEventListener('change', renderNews);
-DOM.newsSortFilter.addEventListener('change', renderNews);
-
+DOM.newsTypeSelect.addEventListener('change', loadNews);
+DOM.newsSearch.addEventListener('input', () => renderNews({ smooth: true }));
+DOM.newsStartDate.addEventListener('change', () => renderNews({ smooth: true }));
+DOM.newsEndDate.addEventListener('change', () => renderNews({ smooth: true }));
+DOM.newsSortFilter.addEventListener('change', () => renderNews({ smooth: true }));
+if (DOM.newsApplyFilters) DOM.newsApplyFilters.addEventListener('click', loadNews);
 DOM.chatbotToggle.addEventListener('click', openChatbot);
 DOM.chatbotClose.addEventListener('click', closeChatbot);
 DOM.chatbotForm.addEventListener('submit', handleChatbotSubmit);
@@ -311,6 +361,7 @@ function switchTab(tab) {
         DOM.navDash.classList.add('is-active');
     }
     if (tab === 'challenges') {
+        configureChallengesTab();
         DOM.sectionChallenges.classList.remove('hidden');
         DOM.navChallenges.classList.add('is-active');
     }
@@ -355,11 +406,12 @@ function showDashboard() {
     DOM.profileName.textContent = name;
     DOM.profileRole.textContent = role === 'admin' ? 'Government Official' : 'Entrepreneur';
     if (avatar) avatar.textContent = getInitials(name);
-    DOM.navChallenges.classList.toggle('hidden', role !== 'entrepreneur');
+    DOM.navChallenges.classList.remove('hidden');
 
     if (role === 'admin') {
         DOM.adminPanel.classList.remove('hidden');
         DOM.entrepreneurPanel.classList.add('hidden');
+        fetchProblems();
         fetchPitches();
     } else {
         DOM.entrepreneurPanel.classList.remove('hidden');
@@ -464,9 +516,17 @@ DOM.problemForm.addEventListener('submit', async (e) => {
             },
             body: JSON.stringify({ title, department, description })
         });
+        const data = await res.json();
+
         if (res.ok) {
             alert('Problem posted successfully');
             DOM.problemForm.reset();
+            governmentProblems = [data, ...governmentProblems.filter((problem) => problem._id !== data._id)];
+            switchTab('challenges');
+            renderProblems();
+            fetchProblems();
+        } else {
+            alert(data.message || 'Error posting problem');
         }
     } catch (error) {
         alert('Error posting problem');
@@ -518,13 +578,23 @@ async function fetchPitches() {
 
 async function fetchProblems() {
     try {
-        const res = await fetch(`${API_BASE}/entrepreneur/problems`, {
+        const role = localStorage.getItem('role');
+        const route = role === 'admin' ? 'admin' : 'entrepreneur';
+        const res = await fetch(`${API_BASE}/${route}/problems`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const data = await res.json();
+
+        if (!res.ok) {
+            governmentProblems = [];
+            renderProblems();
+            console.error('Error fetching problems', data.message || res.statusText);
+            return;
+        }
+
         governmentProblems = Array.isArray(data) ? data : [];
         renderProblems();
-        renderDashboardAnalytics('entrepreneur');
+        renderDashboardAnalytics(role);
         renderNotifications();
     } catch (error) {
         console.error('Error fetching problems', error);
@@ -556,6 +626,7 @@ function startDashboardPolling(role) {
         }
 
         if (role === 'admin') {
+            fetchProblems();
             fetchPitches();
             fetchCollaborations();
             return;
@@ -616,7 +687,11 @@ function renderPitches() {
 }
 
 function renderProblems() {
-    const targets = [DOM.entProblemsList, DOM.dashboardProblemsList].filter(Boolean);
+    const role = localStorage.getItem('role');
+    configureChallengesTab();
+    const targets = role === 'admin'
+        ? [DOM.adminProblemsList].filter(Boolean)
+        : [DOM.entProblemsList, DOM.dashboardProblemsList].filter(Boolean);
     targets.forEach((target) => {
         target.innerHTML = '';
     });
@@ -643,10 +718,44 @@ function renderProblems() {
       <h3 class="font-bold text-lg">${escapeHtml(prob.title)}</h3>
       <p class="text-sm text-blue-600 mb-2 font-semibold">Dept: ${escapeHtml(prob.department)}</p>
       <p>${escapeHtml(prob.description)}</p>
+      ${role === 'admin' ? `<div class="problem-actions"><button onclick="deleteProblem('${prob._id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Delete</button></div>` : ''}
     `;
             target.appendChild(div);
         });
     });
+}
+
+function configureChallengesTab() {
+    const isAdmin = localStorage.getItem('role') === 'admin';
+
+    DOM.challengeSectionKicker.textContent = isAdmin ? 'Government Challenges Feed' : 'Entrepreneur Tasks';
+    DOM.challengeSectionTitle.textContent = 'Active Government Challenges';
+    DOM.challengeSearch.classList.remove('hidden');
+    DOM.adminProblemsList.classList.toggle('hidden', !isAdmin);
+    DOM.entProblemsList.classList.toggle('hidden', isAdmin);
+}
+
+async function deleteProblem(id) {
+    if (!confirm('Delete this challenge? Entrepreneurs will no longer see it.')) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/admin/problems/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            alert(data.message || 'Error deleting challenge');
+            return;
+        }
+
+        governmentProblems = governmentProblems.filter((problem) => problem._id !== id);
+        renderProblems();
+        renderNotifications();
+    } catch (error) {
+        alert('Error deleting challenge');
+    }
 }
 
 function renderMyPitches() {
@@ -1137,73 +1246,319 @@ function loadResources() {
 }
 
 async function loadNews() {
-    DOM.newsList.innerHTML = '<p>Loading industry articles...</p>';
-    const domain = DOM.newsDomainFilter.value || 'startup-business-fintech';
-    const tags = getNewsTags(domain);
+    setNewsLoading(true);
+    const selectedType = getSelectedNewsType();
+    const params = new URLSearchParams({
+        type: selectedType,
+        sort: DOM.newsSortFilter.value || 'newest',
+        pageSize: '30'
+    });
+
+    const query = DOM.newsSearch.value.trim();
+    if (query) params.set('search', query);
+    if (DOM.newsStartDate.value) params.set('from', DOM.newsStartDate.value);
+    if (DOM.newsEndDate.value) params.set('to', DOM.newsEndDate.value);
 
     try {
-        const articleBatches = await Promise.all(tags.map(async (tag) => {
-            const res = await fetch(`https://dev.to/api/articles?tag=${encodeURIComponent(tag)}&per_page=20`);
+        const res = await fetch(`${API_BASE}/news?${params.toString()}`);
+        const data = await res.json();
 
-            if (!res.ok) {
-                return [];
-            }
+        if (!res.ok) {
+            throw new Error(data.message || 'News request failed');
+        }
 
-            return res.json();
-        }));
-        newsArticles = dedupeArticles(articleBatches.flat());
-        renderNews();
+        newsArticles = normalizeNewsArticles(data.articles || [], selectedType);
     } catch (error) {
-        DOM.newsList.innerHTML = '<p class="text-red-500">Failed to load news.</p>';
+        newsArticles = getFallbackNewsArticles(selectedType);
     }
+
+    if (newsArticles.length === 0) {
+        newsArticles = getFallbackNewsArticles(selectedType);
+    }
+
+    setNewsLoading(false);
+    renderNews();
 }
 
-function renderNews() {
-    DOM.newsList.innerHTML = '';
+function renderNews(options = {}) {
+    if (options.smooth) {
+        setNewsLoading(true);
+        window.setTimeout(() => {
+            setNewsLoading(false);
+            renderNews();
+        }, 260);
+        return;
+    }
 
     const startDate = DOM.newsStartDate.value;
     const endDate = DOM.newsEndDate.value;
     const sortOrder = DOM.newsSortFilter.value;
+    const selectedType = getSelectedNewsType();
 
     const filteredArticles = newsArticles.filter((article) => {
-        const publishedDate = new Date(article.published_at).toISOString().slice(0, 10);
-        const matchesStart = !startDate || publishedDate >= startDate;
-        const matchesEnd = !endDate || publishedDate <= endDate;
-        return matchesStart && matchesEnd;
+        const matchesStart = !startDate || article.publishedAt >= startDate;
+        const matchesEnd = !endDate || article.publishedAt <= endDate;
+        return matchesStart && matchesEnd && article.type === selectedType;
     }).sort((a, b) => {
-        const firstDate = new Date(a.published_at).getTime();
-        const secondDate = new Date(b.published_at).getTime();
+        const firstDate = new Date(a.publishedAt).getTime();
+        const secondDate = new Date(b.publishedAt).getTime();
         return sortOrder === 'oldest' ? firstDate - secondDate : secondDate - firstDate;
     });
 
+    DOM.newsList.innerHTML = '';
+
     if (filteredArticles.length === 0) {
-        DOM.newsList.innerHTML = '<p class="empty-state">No articles match the selected date filters.</p>';
+        DOM.newsList.innerHTML = `
+            <div class="news-empty-state">
+                <div class="news-empty-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 5.5h11a3 3 0 0 1 3 3v10H7a3 3 0 0 1-3-3v-10Z"></path>
+                        <path d="M8 9h6"></path>
+                        <path d="M8 13h4"></path>
+                        <path d="m17.5 17.5 3 3"></path>
+                    </svg>
+                </div>
+                <h3>No News Found</h3>
+                <p>No ${escapeHtml(selectedType)} articles match your current filters. Try another date range or search term.</p>
+            </div>
+        `;
+        DOM.newsCount.textContent = '0 articles';
         return;
     }
 
-    filteredArticles.forEach(article => {
-        const div = document.createElement('div');
-        div.className = 'news-card border-b pb-4';
-        div.innerHTML = `
-        <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-lg font-bold text-blue-600 hover:underline">${escapeHtml(article.title)}</a>
-        <p class="text-sm text-gray-500">By ${escapeHtml(article.user?.name || 'Unknown')} on ${new Date(article.published_at).toLocaleDateString()}</p>
-      `;
-        DOM.newsList.appendChild(div);
+    DOM.newsCount.textContent = `${filteredArticles.length} article${filteredArticles.length === 1 ? '' : 's'}`;
+
+    filteredArticles.forEach((article, index) => {
+        const card = document.createElement('article');
+        card.className = 'news-card';
+        card.style.animationDelay = `${Math.min(index * 45, 360)}ms`;
+        card.innerHTML = renderNewsCard(article, index);
+        DOM.newsList.appendChild(card);
     });
 }
 
-function getNewsTags(domain) {
-    const tagsByDomain = {
-        'startup-business-fintech': ['startup', 'business', 'fintech', 'entrepreneurship'],
-        startup: ['startup', 'entrepreneurship'],
-        business: ['business', 'entrepreneurship'],
-        fintech: ['fintech', 'finance'],
-        technology: ['technology'],
-        ai: ['ai'],
-        cybersecurity: ['cybersecurity']
-    };
+function renderNewsCard(article, index) {
+    return `
+        <div class="news-thumb"${article.image ? ` style="background-image: linear-gradient(180deg, rgba(2, 6, 23, 0.02), rgba(2, 6, 23, 0.3)), url('${escapeHtml(article.image)}')"` : ''}>
+            ${!article.image ? renderDefaultNewsIllustration(index) : ''}
+        </div>
+        <div class="news-card-body">
+            <div class="news-meta-row">
+                <time datetime="${escapeHtml(article.publishedAt)}">${formatNewsDate(article.publishedAt)}</time>
+                <span class="news-type-tag ${getNewsTypeClass(article.type)}">${escapeHtml(article.type)}</span>
+            </div>
+            <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="news-title">${escapeHtml(article.title)}</a>
+            <p>${escapeHtml(article.excerpt)}</p>
+            <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="news-read-more">Read More -&gt;</a>
+        </div>
+    `;
+}
 
-    return tagsByDomain[domain] || [domain];
+function getSelectedNewsType() {
+    return DOM.newsTypeSelect?.value || 'AI';
+}
+
+function normalizeNewsArticles(articles, selectedType) {
+    return articles.map((article, index) => {
+        return {
+            id: article.id || article.url || `article-${index}`,
+            title: article.title || 'IdeaSetu platform update',
+            excerpt: article.excerpt || article.description || 'A quick update from the innovation ecosystem for founders and government teams.',
+            type: selectedType,
+            publishedAt: safeDate(article.publishedAt || article.published_at || article.created_at, index),
+            url: article.url || '#',
+            image: article.image || article.cover_image || article.social_image || ''
+        };
+    });
+}
+
+function safeDate(value, index) {
+    const date = value ? new Date(value) : new Date(Date.now() - index * 86400000);
+
+    if (Number.isNaN(date.getTime())) {
+        return new Date(Date.now() - index * 86400000).toISOString().slice(0, 10);
+    }
+
+    return date.toISOString().slice(0, 10);
+}
+
+function formatNewsDate(value) {
+    return new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
+}
+
+function getNewsTypeClass(type) {
+    return `type-${String(type || 'Tech').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+}
+
+function setNewsLoading(isLoading) {
+    if (!DOM.newsLoading || !DOM.newsList) return;
+
+    DOM.newsLoading.classList.toggle('hidden', !isLoading);
+    DOM.newsList.classList.toggle('is-refreshing', isLoading);
+}
+
+function renderDefaultNewsIllustration(index) {
+    return `
+        <div class="news-default-illustration">
+            <span class="bridge-line bridge-line-a"></span>
+            <span class="bridge-line bridge-line-b"></span>
+            <span class="bridge-node node-a"></span>
+            <span class="bridge-node node-b"></span>
+            <span class="bridge-node node-c"></span>
+            <span class="bulb-core">${index % 2 === 0 ? '!' : 'i'}</span>
+        </div>
+    `;
+}
+
+function getFallbackNewsArticles(selectedType = getSelectedNewsType()) {
+    const articles = [
+        {
+            id: 'fallback-1',
+            title: 'AI Pilots Help Departments Shortlist Stronger Civic Proposals',
+            excerpt: 'IdeaSetu teams are testing AI-assisted review flows that surface feasibility, public value, and implementation risk faster.',
+            type: 'AI',
+            publishedAt: '2026-05-16',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-2',
+            title: 'Security Checklist Added for Collaboration File Sharing',
+            excerpt: 'The platform now highlights safer document exchange practices for departments and founders working on sensitive pilots.',
+            type: 'Security',
+            publishedAt: '2026-05-14',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-3',
+            title: 'Finance Brief: Grant Readiness Notes for Early Startup Teams',
+            excerpt: 'A concise funding-readiness guide helps founders prepare budgets, milestones, compliance details, and pilot cost estimates.',
+            type: 'Finance',
+            publishedAt: '2026-05-10',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-4',
+            title: 'Startup Roundtable on Procurement Readiness Announced',
+            excerpt: 'The next IdeaSetu session will help early-stage companies prepare documents, pilots, and compliance details for public buyers.',
+            type: 'Startup',
+            publishedAt: '2026-05-06',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-5',
+            title: 'Tech Update Improves Pitch Review Notifications',
+            excerpt: 'Review status changes, collaboration requests, and feedback loops are now easier to scan from the dashboard notification center.',
+            type: 'Tech',
+            publishedAt: '2026-04-28',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-6',
+            title: 'Startup and Transport Department Test Safer Routing Analytics',
+            excerpt: 'A mobility founder worked with public officials to validate a lightweight analytics layer for dense traffic corridors.',
+            type: 'Startup',
+            publishedAt: '2026-04-20',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-7',
+            title: 'Policy Watch: New Digital Public Infrastructure Guidelines Open for Comment',
+            excerpt: 'Founders and departments can track policy signals that affect procurement, data-sharing, and public platform integrations.',
+            type: 'Policy',
+            publishedAt: '2026-05-15',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-8',
+            title: 'Grant Window Highlights Deep-Tech and Climate Pilots',
+            excerpt: 'New funding calls are prioritizing prototypes with measurable public outcomes and clear deployment timelines.',
+            type: 'Grants',
+            publishedAt: '2026-05-13',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-9',
+            title: 'Procurement Brief: Faster Tender Discovery for GovTech Startups',
+            excerpt: 'Teams can improve bid readiness by tracking eligibility, technical requirements, and pilot proof points earlier.',
+            type: 'Procurement',
+            publishedAt: '2026-05-11',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-10',
+            title: 'Compliance Notes for Founders Working With Public Data',
+            excerpt: 'A practical checklist helps teams prepare consent, security, audit, and retention practices before pilot review.',
+            type: 'Compliance',
+            publishedAt: '2026-05-09',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-11',
+            title: 'Sustainability Pilots Focus on Clean Energy and Urban Resilience',
+            excerpt: 'Departments are looking for measurable approaches to emissions tracking, resource planning, and climate adaptation.',
+            type: 'Sustainability',
+            publishedAt: '2026-05-07',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-12',
+            title: 'Health Innovation Teams Test Digital Triage for Public Clinics',
+            excerpt: 'Healthtech pilots are exploring low-cost workflows for patient routing, follow-up, and remote screening.',
+            type: 'Health',
+            publishedAt: '2026-05-05',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-13',
+            title: 'Education and Skilling Programs Seek AI-Assisted Training Tools',
+            excerpt: 'Public skilling teams are exploring adaptive learning, local-language content, and job-readiness tracking.',
+            type: 'Education',
+            publishedAt: '2026-05-03',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-14',
+            title: 'Infrastructure Teams Explore Sensor-Led Maintenance Models',
+            excerpt: 'Urban departments are comparing tools for roads, transport assets, utilities, and predictive maintenance planning.',
+            type: 'Infrastructure',
+            publishedAt: '2026-05-01',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-15',
+            title: 'Agriculture Pilots Target Market Access and Crop Advisory',
+            excerpt: 'AgriTech founders are testing digital tools for advisory, logistics, price visibility, and farmer support services.',
+            type: 'Agriculture',
+            publishedAt: '2026-04-29',
+            url: '#',
+            image: ''
+        },
+        {
+            id: 'fallback-16',
+            title: 'Smart Cities Programs Look for Civic Technology Integrations',
+            excerpt: 'City teams are prioritizing pilots for mobility, citizen reporting, energy monitoring, and urban service delivery.',
+            type: 'Smart Cities',
+            publishedAt: '2026-04-27',
+            url: '#',
+            image: ''
+        }
+    ];
+
+    return articles.filter((article) => article.type === selectedType);
 }
 
 function dedupeArticles(articles) {
@@ -1330,11 +1685,12 @@ function getNotifications() {
     const role = localStorage.getItem('role');
 
     if (role === 'admin') {
-        return adminPitches.map((pitch) => ({
+        return sortNotifications(adminPitches.map((pitch) => ({
             id: `pitch-${pitch._id || pitch.title}`,
             title: 'New pitch in your inbox',
-            body: `${pitch.entrepreneurId?.name || 'An entrepreneur'} submitted "${pitch.title || 'a proposal'}".`
-        }));
+            body: `${pitch.entrepreneurId?.name || 'An entrepreneur'} submitted "${pitch.title || 'a proposal'}".`,
+            timestamp: getNotificationTimestamp(pitch)
+        })));
     }
 
     const pitchStatusNotifications = entrepreneurPitches
@@ -1342,16 +1698,43 @@ function getNotifications() {
         .map((pitch) => ({
             id: `pitch-status-${pitch._id || pitch.title}-${pitch.status}`,
             title: pitch.status === 'approved' ? 'Your proposal was approved' : 'Your proposal was rejected',
-            body: `"${pitch.title || 'Your proposal'}" is now ${pitch.status}. ${pitch.adminFeedback || ''}`.trim()
+            body: `"${pitch.title || 'Your proposal'}" is now ${pitch.status}. ${pitch.adminFeedback || ''}`.trim(),
+            timestamp: getNotificationTimestamp(pitch)
         }));
 
     const challengeNotifications = governmentProblems.map((problem) => ({
         id: `challenge-${problem._id || problem.title}`,
         title: 'New government challenge posted',
-        body: `${problem.department || 'A government department'} posted "${problem.title || 'a new challenge'}".`
+        body: `${problem.department || 'A government department'} posted "${problem.title || 'a new challenge'}".`,
+        timestamp: getNotificationTimestamp(problem)
     }));
 
-    return [...pitchStatusNotifications, ...challengeNotifications];
+    return sortNotifications([...pitchStatusNotifications, ...challengeNotifications]);
+}
+
+function sortNotifications(notifications) {
+    return [...notifications].sort((first, second) => second.timestamp - first.timestamp);
+}
+
+function getNotificationTimestamp(item) {
+    const explicitDate = item.updatedAt || item.createdAt;
+    const explicitTime = explicitDate ? new Date(explicitDate).getTime() : Number.NaN;
+
+    if (!Number.isNaN(explicitTime)) {
+        return explicitTime;
+    }
+
+    return getMongoObjectIdTimestamp(item._id);
+}
+
+function getMongoObjectIdTimestamp(id) {
+    const objectId = String(id || '');
+
+    if (!/^[a-f\d]{24}$/i.test(objectId)) {
+        return 0;
+    }
+
+    return parseInt(objectId.slice(0, 8), 16) * 1000;
 }
 
 function persistReadNotifications() {
