@@ -23,6 +23,14 @@ const authenticate = (req, res, next) => {
     }
 };
 
+const authenticateToken = (token) => {
+    try {
+        return jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+        return null;
+    }
+};
+
 const authorize = (...roles) => {
     return (req, res, next) => {
         if (!roles.includes(req.user.role)) {
@@ -32,4 +40,4 @@ const authorize = (...roles) => {
     };
 };
 
-module.exports = { generateToken, authenticate, authorize };
+module.exports = { generateToken, authenticate, authenticateToken, authorize };

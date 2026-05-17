@@ -71,7 +71,9 @@ body.light-theme .chatbot-panel {
 
 body.light-theme .icon-button,
 body.light-theme .user-profile,
-body.light-theme .chatbot-message.bot {
+body.light-theme .chatbot-message.bot,
+body.light-theme .collaboration-item,
+body.light-theme .collaboration-message {
     background: rgba(255, 255, 255, 0.88);
 }
 
@@ -88,8 +90,15 @@ body.light-theme .mark-read:hover {
 
 body.light-theme .notification-item.unread,
 body.light-theme .notification-item:hover,
-body.light-theme .empty-state {
+body.light-theme .empty-state,
+body.light-theme .collaboration-item:hover,
+body.light-theme .collaboration-item.is-active {
     background: rgba(15, 23, 42, 0.075);
+}
+
+body.light-theme .collaboration-message.mine {
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.94), rgba(59, 130, 246, 0.94));
+    color: #ffffff;
 }
 
 body.light-theme .notification-dropdown {
@@ -117,7 +126,8 @@ body.light-theme .notification-item p {
 
 body.light-theme input,
 body.light-theme select,
-body.light-theme textarea {
+body.light-theme textarea,
+body.light-theme .file-button {
     background: rgba(255, 255, 255, 0.96);
     border-color: rgba(15, 23, 42, 0.42);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(15, 23, 42, 0.08);
@@ -158,6 +168,8 @@ body.light-theme .form-panel,
 body.light-theme .ai-widget,
 body.light-theme .stat-card,
 body.light-theme .chart-panel,
+body.light-theme .collaboration-sidebar,
+body.light-theme .collaboration-chat,
 body.light-theme #dashboard-problems-list > div,
 body.light-theme #ent-problems-list > div,
 body.light-theme #my-pitches-list > div,
@@ -345,7 +357,8 @@ a {
 .filter-row,
 .pitch-card-header,
 .pitch-actions,
-.chatbot-title-row {
+.chatbot-title-row,
+.collaboration-room-head {
     display: flex;
     align-items: center;
 }
@@ -560,6 +573,24 @@ body.light-theme .theme-icon-moon {
     font-weight: 900;
 }
 
+.collaboration-nav-badge {
+    display: grid;
+    position: absolute;
+    top: 0.18rem;
+    right: 0.22rem;
+    min-width: 1rem;
+    height: 1rem;
+    place-items: center;
+    border: 2px solid var(--bg);
+    border-radius: 999px;
+    background: #22c55e;
+    box-shadow: 0 0 16px rgba(34, 197, 94, 0.65);
+    color: #052e16;
+    font-size: 0.58rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
 .notification-system {
     position: relative;
 }
@@ -734,6 +765,35 @@ body.light-theme .theme-icon-moon {
     gap: 2rem;
 }
 
+.admin-dashboard,
+.entrepreneur-dashboard {
+    display: grid;
+    gap: 2rem;
+}
+
+.admin-top-row,
+.entrepreneur-top-row,
+.entrepreneur-dropdown-row {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(22rem, 5fr);
+    gap: 2rem;
+    align-items: start;
+}
+
+.admin-review-panel {
+    width: 100%;
+}
+
+.admin-review-panel #admin-pitches-list {
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+    align-content: start;
+    min-height: 24rem;
+}
+
+.entrepreneur-dropdown-row > .dropdown-panel {
+    min-height: 100%;
+}
+
 .dashboard-left,
 .dashboard-right {
     display: grid;
@@ -786,8 +846,69 @@ body.light-theme .theme-icon-moon {
 }
 
 .section-heading h2,
-.feed-panel > h2 {
+.feed-panel > h2,
+.dropdown-summary h2 {
     margin-bottom: 0;
+}
+
+.dropdown-panel {
+    display: block;
+}
+
+.dropdown-panel[open] {
+    padding-bottom: 2rem;
+}
+
+.dropdown-summary {
+    display: flex;
+    position: relative;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    margin: -0.25rem -0.25rem 1.25rem;
+    padding: 0.25rem;
+    border-radius: 14px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.dropdown-summary::-webkit-details-marker {
+    display: none;
+}
+
+.dropdown-summary:hover .dropdown-chevron {
+    border-color: rgba(20, 184, 166, 0.72);
+    background: rgba(20, 184, 166, 0.12);
+}
+
+.dropdown-chevron {
+    display: grid;
+    flex: 0 0 auto;
+    width: 2.35rem;
+    height: 2.35rem;
+    place-items: center;
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+    transition: all 300ms ease-in-out;
+}
+
+.dropdown-chevron::before {
+    width: 0.55rem;
+    height: 0.55rem;
+    content: "";
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    color: var(--text);
+    transform: rotate(45deg) translate(-1px, -1px);
+    transition: transform 300ms ease-in-out;
+}
+
+.dropdown-panel[open] .dropdown-chevron::before {
+    transform: rotate(225deg) translate(-1px, -1px);
+}
+
+.dropdown-panel:not([open]) .feed-list {
+    display: none;
 }
 
 .section-kicker {
@@ -1387,6 +1508,188 @@ select option {
     font-weight: 850;
 }
 
+.collaboration-layout {
+    display: grid;
+    grid-template-columns: minmax(16rem, 0.35fr) minmax(0, 1fr);
+    gap: 1rem;
+    min-height: 34rem;
+}
+
+.collaboration-sidebar,
+.collaboration-chat {
+    border: 1px solid var(--line-soft);
+    border-radius: 16px;
+    background: rgba(2, 6, 23, 0.2);
+}
+
+.collaboration-sidebar {
+    overflow: hidden;
+}
+
+.collaboration-list {
+    display: grid;
+    gap: 0.65rem;
+    max-height: 34rem;
+    overflow-y: auto;
+    padding: 0.85rem;
+}
+
+.collaboration-item {
+    display: grid;
+    width: 100%;
+    gap: 0.32rem;
+    padding: 0.95rem;
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.055);
+    color: var(--text);
+    text-align: left;
+    transition: all 300ms ease-in-out;
+}
+
+.collaboration-item:hover,
+.collaboration-item.is-active {
+    border-color: rgba(20, 184, 166, 0.34);
+    background: rgba(20, 184, 166, 0.1);
+}
+
+.collaboration-item strong {
+    font-size: 0.92rem;
+    line-height: 1.35;
+}
+
+.collaboration-item span,
+.collaboration-item em,
+.file-name {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-style: normal;
+}
+
+.collaboration-chat {
+    min-width: 0;
+    padding: 1rem;
+}
+
+.collaboration-room {
+    display: grid;
+    min-height: 31rem;
+    grid-template-rows: auto 1fr auto auto;
+    gap: 1rem;
+}
+
+.collaboration-room-head {
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.collaboration-room-head h3 {
+    margin-bottom: 0;
+    font-size: 1.1rem;
+}
+
+.collaboration-room-head .primary-button {
+    width: auto;
+    white-space: nowrap;
+}
+
+.collaboration-messages {
+    display: flex;
+    max-height: 23rem;
+    min-height: 18rem;
+    flex-direction: column;
+    gap: 0.7rem;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.collaboration-message {
+    max-width: min(78%, 34rem);
+    padding: 0.85rem 0.95rem;
+    border: 1px solid var(--line-soft);
+    border-radius: 14px;
+    border-bottom-left-radius: 5px;
+    background: rgba(255, 255, 255, 0.075);
+}
+
+.collaboration-message.mine {
+    align-self: flex-end;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 14px;
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.94), rgba(59, 130, 246, 0.94));
+    color: #ffffff;
+}
+
+.collaboration-message span {
+    display: block;
+    margin-bottom: 0.32rem;
+    color: inherit;
+    font-size: 0.68rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    opacity: 0.78;
+    text-transform: uppercase;
+}
+
+.collaboration-message p {
+    margin-bottom: 0;
+    color: inherit;
+    line-height: 1.5;
+}
+
+.collaboration-message a {
+    display: inline-flex;
+    margin-top: 0.45rem;
+    color: inherit;
+    font-weight: 800;
+}
+
+.collaboration-form {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.65rem;
+}
+
+.collaboration-form button,
+.file-button {
+    min-height: 2.8rem;
+    padding: 0 0.95rem;
+    border-radius: 999px;
+    font-weight: 850;
+}
+
+.collaboration-form button {
+    background: linear-gradient(135deg, var(--saffron), #f97316);
+    color: #111827;
+}
+
+.collaboration-form button:disabled,
+.collaboration-form input:disabled,
+.file-button:has(input:disabled) {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.file-button {
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line-soft);
+    background: rgba(255, 255, 255, 0.07);
+    color: #99f6e4;
+    cursor: pointer;
+}
+
+.file-button input {
+    display: none;
+}
+
+.file-name {
+    min-height: 1rem;
+    margin: -0.4rem 0 0;
+}
+
 .text-sm {
     font-size: 0.875rem;
 }
@@ -1481,7 +1784,14 @@ select option {
         justify-content: space-between;
     }
 
-    .dashboard-role-panel {
+    .dashboard-role-panel,
+    .admin-top-row,
+    .entrepreneur-top-row,
+    .entrepreneur-dropdown-row {
+        grid-template-columns: 1fr;
+    }
+
+    .collaboration-layout {
         grid-template-columns: 1fr;
     }
 }
@@ -1545,6 +1855,14 @@ select option {
 
     .ai-widget {
         grid-template-columns: 1fr;
+    }
+
+    .collaboration-form {
+        grid-template-columns: 1fr;
+    }
+
+    .collaboration-message {
+        max-width: 94%;
     }
 
     .chatbot {

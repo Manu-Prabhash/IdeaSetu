@@ -71,6 +71,10 @@
                 <div class="nav-actions">
                     <button id="nav-dash" type="button">Dashboard</button>
                     <button id="nav-challenges" type="button" class="hidden">Gov Challenges</button>
+                    <button id="nav-collaboration" type="button">
+                        Collaboration
+                        <span id="collaboration-nav-badge" class="collaboration-nav-badge hidden">0</span>
+                    </button>
                     <button id="nav-resources" type="button">Resources</button>
                     <button id="nav-news" type="button">News</button>
                 </div>
@@ -123,8 +127,8 @@
 
         <main class="dashboard-main">
             <section id="section-dash">
-                <div id="admin-panel" class="hidden dashboard-role-panel">
-                    <div class="dashboard-left">
+                <div id="admin-panel" class="hidden admin-dashboard">
+                    <div class="admin-top-row">
                         <section class="glass-panel insight-panel">
                             <span class="section-kicker">Government Overview</span>
                             <div class="section-heading">
@@ -135,27 +139,6 @@
                             <div id="admin-chart" class="chart-panel"></div>
                         </section>
 
-                        <section class="glass-panel feed-panel">
-                            <div class="section-heading">
-                                <div>
-                                    <span class="section-kicker">Review Queue</span>
-                                    <h2>Incoming Pitches</h2>
-                                </div>
-                                <div class="filter-row">
-                                    <input type="text" id="pitch-tag-filter" placeholder="Filter by tag">
-                                    <select id="pitch-status-filter">
-                                        <option value="all">All Statuses</option>
-                                        <option value="pending">Pending</option>
-                                        <option value="approved">Approved</option>
-                                        <option value="rejected">Rejected</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div id="admin-pitches-list" class="feed-list"></div>
-                        </section>
-                    </div>
-
-                    <aside class="dashboard-right">
                         <section class="form-panel">
                             <span class="section-kicker">Challenge Desk</span>
                             <h2>Post a Government Problem</h2>
@@ -166,20 +149,30 @@
                                 <button type="submit" class="primary-button">Post Problem</button>
                             </form>
                         </section>
+                    </div>
 
-                        <section class="ai-widget">
-                            <div class="ai-orb">AI</div>
+                    <section class="glass-panel feed-panel admin-review-panel">
+                        <div class="section-heading">
                             <div>
-                                <span class="section-kicker">Policy Assistant</span>
-                                <h2>Surface fit signals faster</h2>
-                                <p>Use the assistant to compare pitch tags with ministries, schemes, and review criteria.</p>
+                                <span class="section-kicker">Review Queue</span>
+                                <h2>Incoming Pitches</h2>
                             </div>
-                        </section>
-                    </aside>
+                            <div class="filter-row">
+                                <input type="text" id="pitch-tag-filter" placeholder="Filter by tag">
+                                <select id="pitch-status-filter">
+                                    <option value="all">All Statuses</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="admin-pitches-list" class="feed-list"></div>
+                    </section>
                 </div>
 
-                <div id="entrepreneur-panel" class="hidden dashboard-role-panel">
-                    <div class="dashboard-left">
+                <div id="entrepreneur-panel" class="hidden entrepreneur-dashboard">
+                    <div class="entrepreneur-top-row">
                         <section class="glass-panel insight-panel">
                             <span class="section-kicker">Founder Dashboard</span>
                             <div class="section-heading">
@@ -190,24 +183,6 @@
                             <div id="entrepreneur-chart" class="chart-panel"></div>
                         </section>
 
-                        <section class="glass-panel feed-panel">
-                            <div class="section-heading">
-                                <div>
-                                    <span class="section-kicker">Government Challenges Feed</span>
-                                    <h2>Active Challenges</h2>
-                                </div>
-                            </div>
-                            <div id="dashboard-problems-list" class="feed-list"></div>
-                        </section>
-
-                        <section class="glass-panel feed-panel">
-                            <span class="section-kicker">Feedback Loop</span>
-                            <h2>My Pitch Status</h2>
-                            <div id="my-pitches-list" class="feed-list"></div>
-                        </section>
-                    </div>
-
-                    <aside class="dashboard-right">
                         <section class="form-panel">
                             <span class="section-kicker">New Proposal</span>
                             <h2>Submit a Pitch</h2>
@@ -218,16 +193,31 @@
                                 <button type="submit" class="primary-button">Submit Pitch</button>
                             </form>
                         </section>
+                    </div>
 
-                        <section class="ai-widget">
-                            <div class="ai-orb">AI</div>
-                            <div>
-                                <span class="section-kicker">AI Assistant</span>
-                                <h2>Strengthen your submission</h2>
-                                <p>Ask about schemes, ministries, eligibility, or how to sharpen your problem fit before submitting.</p>
-                            </div>
-                        </section>
-                    </aside>
+                    <div class="entrepreneur-dropdown-row">
+                        <details class="glass-panel feed-panel dropdown-panel" open>
+                            <summary class="dropdown-summary">
+                                <div>
+                                    <span class="section-kicker">Government Challenges Feed</span>
+                                    <h2>Active Challenges</h2>
+                                </div>
+                                <span class="dropdown-chevron" aria-hidden="true"></span>
+                            </summary>
+                            <div id="dashboard-problems-list" class="feed-list"></div>
+                        </details>
+
+                        <details class="glass-panel feed-panel dropdown-panel" open>
+                            <summary class="dropdown-summary">
+                                <div>
+                                    <span class="section-kicker">Feedback Loop</span>
+                                    <h2>My Pitch Status</h2>
+                                </div>
+                                <span class="dropdown-chevron" aria-hidden="true"></span>
+                            </summary>
+                            <div id="my-pitches-list" class="feed-list"></div>
+                        </details>
+                    </div>
                 </div>
             </section>
 
@@ -260,6 +250,43 @@
                     </div>
                 </div>
                 <div id="resources-list" class="resource-grid"></div>
+            </section>
+
+            <section id="section-collaboration" class="hidden glass-panel full-panel">
+                <div class="section-heading">
+                    <div>
+                        <span class="section-kicker">Live Workspace</span>
+                        <h2>Collaboration</h2>
+                    </div>
+                    <span id="collaboration-status" class="live-chip">No session selected</span>
+                </div>
+                <div class="collaboration-layout">
+                    <aside class="collaboration-sidebar">
+                        <div id="collaboration-list" class="collaboration-list"></div>
+                    </aside>
+                    <section class="collaboration-chat">
+                        <div id="collaboration-empty" class="empty-state">Approved pitch collaborations will appear here.</div>
+                        <div id="collaboration-room" class="hidden collaboration-room">
+                            <div class="collaboration-room-head">
+                                <div>
+                                    <span id="collaboration-room-meta" class="section-kicker">Session</span>
+                                    <h3 id="collaboration-room-title">Pitch collaboration</h3>
+                                </div>
+                                <button id="collaboration-accept" type="button" class="primary-button hidden">Accept Collaboration</button>
+                            </div>
+                            <div id="collaboration-messages" class="collaboration-messages"></div>
+                            <form id="collaboration-form" class="collaboration-form">
+                                <label class="file-button">
+                                    <input id="collaboration-file" type="file">
+                                    <span>Attach</span>
+                                </label>
+                                <input id="collaboration-input" type="text" placeholder="Write a message..." autocomplete="off">
+                                <button type="submit">Send</button>
+                            </form>
+                            <p id="collaboration-file-name" class="file-name"></p>
+                        </div>
+                    </section>
+                </div>
             </section>
 
             <section id="section-news" class="hidden glass-panel full-panel">

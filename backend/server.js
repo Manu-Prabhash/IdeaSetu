@@ -8,6 +8,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const entrepreneurRoutes = require('./routes/entrepreneurRoutes');
+const collaborationRoutes = require('./routes/collaborationRoutes');
 
 const app = express();
 
@@ -15,13 +16,15 @@ app.use(helmet({
     contentSecurityPolicy: false,
 }));
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '8mb' }));
 
 app.use(express.static(path.join(__dirname, '../frontend')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/entrepreneur', entrepreneurRoutes);
+app.use('/api/collaborations', collaborationRoutes);
 
 app.post('/api/chat', async (req, res) => {
     try {

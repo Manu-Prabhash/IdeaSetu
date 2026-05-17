@@ -15,12 +15,15 @@ const DOM = {
     logoutBtn: document.getElementById('logout-btn'),
     navDash: document.getElementById('nav-dash'),
     navChallenges: document.getElementById('nav-challenges'),
+    navCollaboration: document.getElementById('nav-collaboration'),
+    collaborationNavBadge: document.getElementById('collaboration-nav-badge'),
     navResources: document.getElementById('nav-resources'),
     navNews: document.getElementById('nav-news'),
     profileName: document.getElementById('profile-name'),
     profileRole: document.getElementById('profile-role'),
     sectionDash: document.getElementById('section-dash'),
     sectionChallenges: document.getElementById('section-challenges'),
+    sectionCollaboration: document.getElementById('section-collaboration'),
     sectionResources: document.getElementById('section-resources'),
     sectionNews: document.getElementById('section-news'),
     adminPanel: document.getElementById('admin-panel'),
@@ -54,7 +57,19 @@ const DOM = {
     chatbotClose: document.getElementById('chatbot-close'),
     chatbotMessages: document.getElementById('chatbot-messages'),
     chatbotForm: document.getElementById('chatbot-form'),
-    chatbotInput: document.getElementById('chatbot-input')
+    chatbotInput: document.getElementById('chatbot-input'),
+    collaborationList: document.getElementById('collaboration-list'),
+    collaborationStatus: document.getElementById('collaboration-status'),
+    collaborationEmpty: document.getElementById('collaboration-empty'),
+    collaborationRoom: document.getElementById('collaboration-room'),
+    collaborationRoomMeta: document.getElementById('collaboration-room-meta'),
+    collaborationRoomTitle: document.getElementById('collaboration-room-title'),
+    collaborationAccept: document.getElementById('collaboration-accept'),
+    collaborationMessages: document.getElementById('collaboration-messages'),
+    collaborationForm: document.getElementById('collaboration-form'),
+    collaborationInput: document.getElementById('collaboration-input'),
+    collaborationFile: document.getElementById('collaboration-file'),
+    collaborationFileName: document.getElementById('collaboration-file-name')
 };
 
 const notificationToggle = document.getElementById('notification-toggle');
@@ -142,6 +157,12 @@ let entrepreneurPitches = [];
 let governmentProblems = [];
 let newsArticles = [];
 let dashboardPollId = null;
+let collaborations = [];
+let activeCollaborationId = null;
+let activeMessages = [];
+let collaborationEvents = null;
+let currentTab = 'dash';
+let unreadCollaborationIds = new Set();
 
 function init() {
     applySavedTheme();
@@ -179,9 +200,12 @@ DOM.backToLogin.addEventListener('click', () => {
 });
 
 DOM.logoutBtn.addEventListener('click', () => {
+    closeCollaborationStream();
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('name');
+    unreadCollaborationIds = new Set();
+    renderCollaborationNavBadge();
     showAuth();
 });
 
@@ -189,6 +213,11 @@ DOM.navDash.addEventListener('click', () => switchTab('dash'));
 DOM.navChallenges.addEventListener('click', () => {
     switchTab('challenges');
     renderProblems();
+});
+DOM.navCollaboration.addEventListener('click', () => {
+    switchTab('collaboration');
+    markActiveCollaborationRead();
+    fetchCollaborations();
 });
 DOM.navResources.addEventListener('click', () => {
     switchTab('resources');
@@ -212,6 +241,11 @@ DOM.newsSortFilter.addEventListener('change', renderNews);
 DOM.chatbotToggle.addEventListener('click', openChatbot);
 DOM.chatbotClose.addEventListener('click', closeChatbot);
 DOM.chatbotForm.addEventListener('submit', handleChatbotSubmit);
+DOM.collaborationForm.addEventListener('submit', handleCollaborationSubmit);
+DOM.collaborationAccept.addEventListener('click', acceptActiveCollaboration);
+DOM.collaborationFile.addEventListener('change', () => {
+    DOM.collaborationFileName.textContent = DOM.collaborationFile.files[0]?.name || '';
+});
 
 if (notificationToggle && notificationDropdown) {
     notificationToggle.addEventListener('click', (event) => {
@@ -260,12 +294,15 @@ document.querySelectorAll('[data-question]').forEach((button) => {
 });
 
 function switchTab(tab) {
+    currentTab = tab;
     DOM.sectionDash.classList.add('hidden');
     DOM.sectionChallenges.classList.add('hidden');
+    DOM.sectionCollaboration.classList.add('hidden');
     DOM.sectionResources.classList.add('hidden');
     DOM.sectionNews.classList.add('hidden');
     DOM.navDash.classList.remove('is-active');
     DOM.navChallenges.classList.remove('is-active');
+    DOM.navCollaboration.classList.remove('is-active');
     DOM.navResources.classList.remove('is-active');
     DOM.navNews.classList.remove('is-active');
 
@@ -276,6 +313,11 @@ function switchTab(tab) {
     if (tab === 'challenges') {
         DOM.sectionChallenges.classList.remove('hidden');
         DOM.navChallenges.classList.add('is-active');
+    }
+    if (tab === 'collaboration') {
+        DOM.sectionCollaboration.classList.remove('hidden');
+        DOM.navCollaboration.classList.add('is-active');
+        markActiveCollaborationRead();
     }
     if (tab === 'resources') {
         DOM.sectionResources.classList.remove('hidden');
@@ -289,11 +331,16 @@ function switchTab(tab) {
 
 function showAuth() {
     stopDashboardPolling();
+    closeCollaborationStream();
+    collaborations = [];
+    activeCollaborationId = null;
+    activeMessages = [];
     DOM.authView.classList.remove('hidden');
     DOM.dashboardView.classList.add('hidden');
     DOM.loginForm.classList.remove('hidden');
     DOM.registerForm.classList.add('hidden');
     DOM.forgotForm.classList.add('hidden');
+    renderCollaborationNavBadge();
 }
 
 function showDashboard() {
@@ -304,6 +351,7 @@ function showDashboard() {
     const role = localStorage.getItem('role');
     const name = localStorage.getItem('name') || 'User';
 
+    loadUnreadCollaborations();
     DOM.profileName.textContent = name;
     DOM.profileRole.textContent = role === 'admin' ? 'Government Official' : 'Entrepreneur';
     if (avatar) avatar.textContent = getInitials(name);
@@ -320,7 +368,10 @@ function showDashboard() {
         fetchMyPitches();
     }
 
+    fetchCollaborations();
+    openCollaborationStream();
     renderNotifications();
+    renderCollaborationNavBadge();
     startDashboardPolling(role);
 }
 
@@ -506,11 +557,13 @@ function startDashboardPolling(role) {
 
         if (role === 'admin') {
             fetchPitches();
+            fetchCollaborations();
             return;
         }
 
         fetchProblems();
         fetchMyPitches();
+        fetchCollaborations();
     }, 3000);
 }
 
@@ -555,6 +608,7 @@ function renderPitches() {
       <div class="flex gap-2 pitch-actions">
         <button onclick="updatePitch('${pitch._id}', 'approved')" class="bg-green-500 text-white px-3 py-1 rounded text-sm">Approve</button>
         <button onclick="updatePitch('${pitch._id}', 'rejected')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Reject</button>
+        ${renderAdminCollaborationAction(pitch)}
       </div>
     `;
         DOM.adminPitchesList.appendChild(div);
@@ -619,6 +673,7 @@ function renderMyPitches() {
         <strong>Government feedback</strong>
         <p>${escapeHtml(pitch.adminFeedback || 'No feedback yet.')}</p>
       </div>
+      ${renderEntrepreneurCollaborationAction(pitch)}
     `;
         DOM.myPitchesList.appendChild(div);
     });
@@ -640,6 +695,417 @@ window.updatePitch = async function (id, status) {
         alert('Error updating pitch');
     }
 };
+
+function renderAdminCollaborationAction(pitch) {
+    if (pitch.status !== 'approved') {
+        return '';
+    }
+
+    const collaboration = getCollaborationForPitch(pitch._id);
+
+    if (collaboration) {
+        return `<button onclick="openCollaboration('${collaboration._id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm">${collaboration.status === 'accepted' ? 'Open Chat' : 'Requested'}</button>`;
+    }
+
+    return `<button onclick="requestCollaboration('${pitch._id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm">Push Collaboration</button>`;
+}
+
+function renderEntrepreneurCollaborationAction(pitch) {
+    const collaboration = getCollaborationForPitch(pitch._id);
+
+    if (!collaboration) {
+        return '';
+    }
+
+    const action = collaboration.status === 'accepted'
+        ? 'Open Chat'
+        : 'Accept Collaboration';
+
+    return `
+        <div class="pitch-actions">
+            <button onclick="openCollaboration('${collaboration._id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm">${action}</button>
+        </div>
+    `;
+}
+
+function getCollaborationForPitch(pitchId) {
+    return collaborations.find((collaboration) => String(collaboration.pitchId?._id || collaboration.pitchId) === String(pitchId));
+}
+
+window.requestCollaboration = async function (pitchId) {
+    try {
+        const res = await fetch(`${API_BASE}/collaborations/request`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ pitchId })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.message || 'Unable to request collaboration');
+            return;
+        }
+
+        upsertCollaboration(data);
+        renderPitches();
+        switchTab('collaboration');
+        openCollaboration(data._id);
+    } catch (error) {
+        alert('Error requesting collaboration');
+    }
+};
+
+window.openCollaboration = async function (id) {
+    activeCollaborationId = id;
+    switchTab('collaboration');
+    markCollaborationRead(id);
+    renderCollaborations();
+    await fetchCollaborationMessages(id);
+};
+
+async function fetchCollaborations() {
+    try {
+        const res = await fetch(`${API_BASE}/collaborations`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        collaborations = Array.isArray(data) ? data : [];
+
+        if (!activeCollaborationId && collaborations.length > 0) {
+            activeCollaborationId = collaborations[0]._id;
+        }
+
+        renderCollaborations();
+        renderPitches();
+        renderMyPitches();
+
+        if (activeCollaborationId) {
+            fetchCollaborationMessages(activeCollaborationId);
+        }
+    } catch (error) {
+        console.error('Error fetching collaborations', error);
+    }
+}
+
+function renderCollaborations() {
+    DOM.collaborationList.innerHTML = '';
+
+    if (collaborations.length === 0) {
+        DOM.collaborationList.innerHTML = '<p class="empty-state">No collaboration sessions yet.</p>';
+        DOM.collaborationEmpty.classList.remove('hidden');
+        DOM.collaborationRoom.classList.add('hidden');
+        DOM.collaborationStatus.textContent = 'No session selected';
+        return;
+    }
+
+    collaborations.forEach((collaboration) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = `collaboration-item${collaboration._id === activeCollaborationId ? ' is-active' : ''}`;
+        item.innerHTML = `
+            <strong>${escapeHtml(collaboration.pitchId?.title || 'Pitch collaboration')}</strong>
+            <span>${escapeHtml(getCollaborationPartyLabel(collaboration))}</span>
+            <em>${collaboration.status === 'accepted' ? 'Chat active' : 'Awaiting acceptance'}</em>
+        `;
+        item.addEventListener('click', () => window.openCollaboration(collaboration._id));
+        DOM.collaborationList.appendChild(item);
+    });
+
+    renderActiveCollaborationRoom();
+}
+
+function renderActiveCollaborationRoom() {
+    const collaboration = getActiveCollaboration();
+
+    if (!collaboration) {
+        DOM.collaborationEmpty.classList.remove('hidden');
+        DOM.collaborationRoom.classList.add('hidden');
+        DOM.collaborationStatus.textContent = 'No session selected';
+        return;
+    }
+
+    const isEntrepreneur = localStorage.getItem('role') === 'entrepreneur';
+    const canAccept = isEntrepreneur && collaboration.status === 'requested';
+    const canChat = collaboration.status === 'accepted';
+
+    DOM.collaborationEmpty.classList.add('hidden');
+    DOM.collaborationRoom.classList.remove('hidden');
+    DOM.collaborationRoomTitle.textContent = collaboration.pitchId?.title || 'Pitch collaboration';
+    DOM.collaborationRoomMeta.textContent = getCollaborationPartyLabel(collaboration);
+    DOM.collaborationStatus.textContent = canChat ? 'Live chat active' : 'Waiting for entrepreneur acceptance';
+    DOM.collaborationAccept.classList.toggle('hidden', !canAccept);
+    DOM.collaborationInput.disabled = !canChat;
+    DOM.collaborationFile.disabled = !canChat;
+    DOM.collaborationForm.querySelector('button[type="submit"]').disabled = !canChat;
+    DOM.collaborationInput.placeholder = canChat ? 'Write a message...' : 'Accept the collaboration to start chatting';
+    renderCollaborationMessages();
+}
+
+function renderCollaborationMessages() {
+    DOM.collaborationMessages.innerHTML = '';
+
+    if (activeMessages.length === 0) {
+        DOM.collaborationMessages.innerHTML = '<p class="empty-state">No messages yet.</p>';
+        return;
+    }
+
+    activeMessages.forEach((message) => {
+        const mine = isOwnCollaborationMessage(message);
+        const bubble = document.createElement('div');
+        bubble.className = `collaboration-message${mine ? ' mine' : ''}`;
+        bubble.innerHTML = `
+            <span>${escapeHtml(message.senderRole === 'admin' ? 'Government' : 'Entrepreneur')}</span>
+            ${message.text ? `<p>${escapeHtml(message.text)}</p>` : ''}
+            ${message.file?.url ? `<a href="${escapeHtml(message.file.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(message.file.originalName || 'Attachment')}</a>` : ''}
+        `;
+        DOM.collaborationMessages.appendChild(bubble);
+    });
+
+    DOM.collaborationMessages.scrollTop = DOM.collaborationMessages.scrollHeight;
+}
+
+async function fetchCollaborationMessages(id) {
+    try {
+        const res = await fetch(`${API_BASE}/collaborations/${id}/messages`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        activeMessages = Array.isArray(data) ? data.map((message) => normalizeMessage(message, id)) : [];
+        renderActiveCollaborationRoom();
+    } catch (error) {
+        console.error('Error fetching collaboration messages', error);
+    }
+}
+
+async function handleCollaborationSubmit(event) {
+    event.preventDefault();
+
+    const collaboration = getActiveCollaboration();
+    if (!collaboration || collaboration.status !== 'accepted') return;
+
+    const text = DOM.collaborationInput.value.trim();
+    const selectedFile = DOM.collaborationFile.files[0];
+
+    if (!text && !selectedFile) return;
+
+    try {
+        const body = { text };
+
+        if (selectedFile) {
+            body.file = await readFileForUpload(selectedFile);
+        }
+
+        const res = await fetch(`${API_BASE}/collaborations/${collaboration._id}/messages`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.message || 'Unable to send message');
+            return;
+        }
+
+        DOM.collaborationInput.value = '';
+        DOM.collaborationFile.value = '';
+        DOM.collaborationFileName.textContent = '';
+        addMessageIfRelevant(normalizeMessage(data, collaboration._id));
+    } catch (error) {
+        alert('Error sending message');
+    }
+}
+
+async function acceptActiveCollaboration() {
+    const collaboration = getActiveCollaboration();
+    if (!collaboration) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/collaborations/${collaboration._id}/accept`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.message || 'Unable to accept collaboration');
+            return;
+        }
+
+        upsertCollaboration(data);
+        renderCollaborations();
+    } catch (error) {
+        alert('Error accepting collaboration');
+    }
+}
+
+function openCollaborationStream() {
+    closeCollaborationStream();
+
+    const token = localStorage.getItem('token');
+    if (!token || !window.EventSource) return;
+
+    collaborationEvents = new EventSource(`${API_BASE}/collaborations/stream?token=${encodeURIComponent(token)}`);
+    collaborationEvents.addEventListener('collaboration:update', (event) => {
+        upsertCollaboration(JSON.parse(event.data));
+        renderCollaborations();
+        renderPitches();
+        renderMyPitches();
+    });
+    collaborationEvents.addEventListener('collaboration:message', (event) => {
+        const message = normalizeMessage(JSON.parse(event.data));
+        handleIncomingCollaborationMessage(message);
+        addMessageIfRelevant(message);
+    });
+}
+
+function closeCollaborationStream() {
+    if (!collaborationEvents) return;
+
+    collaborationEvents.close();
+    collaborationEvents = null;
+}
+
+function addMessageIfRelevant(message) {
+    if (getEntityId(message.collaborationId) !== getEntityId(activeCollaborationId)) return;
+    if (activeMessages.some((existing) => getEntityId(existing._id) === getEntityId(message._id))) return;
+
+    activeMessages.push(message);
+    renderCollaborationMessages();
+}
+
+function handleIncomingCollaborationMessage(message) {
+    const collaborationId = getEntityId(message.collaborationId);
+
+    if (!collaborationId || isOwnCollaborationMessage(message)) return;
+
+    const isOpenActiveChat = currentTab === 'collaboration' && collaborationId === getEntityId(activeCollaborationId);
+
+    if (isOpenActiveChat) {
+        markCollaborationRead(collaborationId);
+        return;
+    }
+
+    unreadCollaborationIds.add(collaborationId);
+    persistUnreadCollaborations();
+    renderCollaborationNavBadge();
+}
+
+function markActiveCollaborationRead() {
+    if (!activeCollaborationId) return;
+    markCollaborationRead(activeCollaborationId);
+}
+
+function markCollaborationRead(id) {
+    const collaborationId = getEntityId(id);
+    if (!collaborationId || !unreadCollaborationIds.has(collaborationId)) return;
+
+    unreadCollaborationIds.delete(collaborationId);
+    persistUnreadCollaborations();
+    renderCollaborationNavBadge();
+}
+
+function loadUnreadCollaborations() {
+    unreadCollaborationIds = new Set(JSON.parse(localStorage.getItem(getUnreadCollaborationsKey()) || '[]'));
+}
+
+function persistUnreadCollaborations() {
+    localStorage.setItem(getUnreadCollaborationsKey(), JSON.stringify([...unreadCollaborationIds]));
+}
+
+function getUnreadCollaborationsKey() {
+    return `unreadCollaborations:${getUserIdFromToken() || 'guest'}`;
+}
+
+function renderCollaborationNavBadge() {
+    if (!DOM.collaborationNavBadge) return;
+
+    const unreadCount = unreadCollaborationIds.size;
+    DOM.collaborationNavBadge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+    DOM.collaborationNavBadge.classList.toggle('hidden', unreadCount === 0);
+}
+
+function upsertCollaboration(collaboration) {
+    const index = collaborations.findIndex((item) => item._id === collaboration._id);
+
+    if (index >= 0) {
+        collaborations[index] = collaboration;
+    } else {
+        collaborations.unshift(collaboration);
+    }
+
+    activeCollaborationId = activeCollaborationId || collaboration._id;
+}
+
+function getActiveCollaboration() {
+    return collaborations.find((collaboration) => collaboration._id === activeCollaborationId);
+}
+
+function normalizeMessage(message, fallbackCollaborationId = '') {
+    return {
+        ...message,
+        _id: getEntityId(message._id) || `local-${Date.now()}`,
+        collaborationId: getEntityId(message.collaborationId) || fallbackCollaborationId,
+        senderId: getEntityId(message.senderId)
+    };
+}
+
+function isOwnCollaborationMessage(message) {
+    const tokenUserId = getUserIdFromToken();
+    const senderId = getEntityId(message.senderId);
+    return message.senderRole === localStorage.getItem('role') && (!senderId || senderId === tokenUserId);
+}
+
+function getEntityId(value) {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (value._id) return getEntityId(value._id);
+    if (value.$oid) return String(value.$oid);
+    return String(value);
+}
+
+function getCollaborationPartyLabel(collaboration) {
+    const role = localStorage.getItem('role');
+    const counterpart = role === 'admin' ? collaboration.entrepreneurId : collaboration.adminId;
+    return role === 'admin'
+        ? `With ${counterpart?.name || 'Entrepreneur'}`
+        : `With ${counterpart?.name || 'Government'}`;
+}
+
+function readFileForUpload(file) {
+    return new Promise((resolve, reject) => {
+        if (file.size > 5 * 1024 * 1024) {
+            reject(new Error('Files must be 5 MB or smaller'));
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => resolve({
+            name: file.name,
+            type: file.type,
+            data: reader.result
+        });
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function getUserIdFromToken() {
+    const token = localStorage.getItem('token');
+    if (!token) return '';
+
+    try {
+        return JSON.parse(atob(token.split('.')[1])).id;
+    } catch (error) {
+        return '';
+    }
+}
 
 function loadResources() {
     DOM.resourcesList.innerHTML = '';
