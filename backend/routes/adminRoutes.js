@@ -11,8 +11,36 @@ router.use(authorize('admin'));
 router.post('/problems', async (req, res) => {
     try {
         const { title, description, department } = req.body;
-        const problem = await Problem.create({ title, description, department });
+        const problem = await Problem.create({
+            title,
+            description,
+            department,
+            adminId: req.user.id
+        });
         res.status(201).json(problem);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.get('/problems', async (req, res) => {
+    try {
+        const problems = await Problem.find().sort({ createdAt: -1 });
+        res.json(problems);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.delete('/problems/:id', async (req, res) => {
+    try {
+        const problem = await Problem.findByIdAndDelete(req.params.id);
+
+        if (!problem) {
+            return res.status(404).json({ message: 'Problem not found' });
+        }
+
+        res.json({ message: 'Problem deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
@@ -20,7 +48,7 @@ router.post('/problems', async (req, res) => {
 
 router.get('/pitches', async (req, res) => {
     try {
-        const pitches = await Pitch.find().populate('entrepreneurId', 'name email');
+        const pitches = await Pitch.find().sort({ createdAt: -1, _id: -1 }).populate('entrepreneurId', 'name email');
         res.json(pitches);
     } catch (error) {
         res.status(500).json({ message: 'Server error' });

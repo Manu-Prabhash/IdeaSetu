@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const entrepreneurRoutes = require('./routes/entrepreneurRoutes');
 const collaborationRoutes = require('./routes/collaborationRoutes');
+const newsRoutes = require('./routes/newsRoutes');
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/entrepreneur', entrepreneurRoutes);
 app.use('/api/collaborations', collaborationRoutes);
+app.use('/api/news', newsRoutes);
 
 app.post('/api/chat', async (req, res) => {
     try {
@@ -50,7 +52,7 @@ app.post('/api/chat', async (req, res) => {
                     {
                         role: 'system',
                         content: [
-                            'You are the Gov-Ent Link assistant.',
+                            'You are the IdeaSetu assistant.',
                             'Help Indian entrepreneurs and government admins use this app.',
                             'Answer questions about Indian startup schemes, DPIIT recognition, MSME Udyam, grants, startup laws, pitching, login issues, MongoDB, and dashboard navigation.',
                             'Keep replies concise, practical, and friendly.',
