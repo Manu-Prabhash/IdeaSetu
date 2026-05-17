@@ -1,4 +1,4 @@
-const API_BASE = 'https://ideasetu.onrender.com';
+const API_BASE = 'https://ideasetu.onrender.com/api';
 
 const DOM = {
     authView: document.getElementById('auth-view'),
