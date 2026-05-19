@@ -26,10 +26,14 @@ Follow these steps to configure and run IdeaSetu on your local machine.
 Ensure you have [Node.js](https://nodejs.org/) and [MongoDB](https://www.mongodb.com/) installed and running locally or have access to a MongoDB Atlas cluster.
 
 ### 1. Clone the Repository
-
+```bash
+git clone [https://github.com/your-username/ideasetu.git](https://github.com/your-username/ideasetu.git)
+cd ideasetu
+```
 ### 2. Configure Environment Variables
 Because sensitive keys are excluded via .gitignore, you must manually configure your environment settings. Create a file named .env inside the backend directory and populate it with the following keys:
-```PORT=5000
+```
+PORT=5000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_secure_jwt_secret_key
 NEWS_API_KEY=your_news_api_endpoint_key
@@ -39,12 +43,14 @@ Ensure you update any local configuration files or constants in your frontend/ba
 
 ### 3. Install Dependencies
 Navigate to the backend directory and install the necessary npm packages:
-```cd backend
+```
+cd backend
 npm install
 ```
 
 ### 4. Running the Application
 To start the backend server, execute:
-```node server.js
+```
+node server.js
 ```
 
