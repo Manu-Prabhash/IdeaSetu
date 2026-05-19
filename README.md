@@ -35,7 +35,7 @@ JWT_SECRET=your_secure_jwt_secret_key
 NEWS_API_KEY=your_news_api_endpoint_key
 CHATBOT_API_KEY=your_chatbot_ai_service_key
 ```
-## Ensure you update any local configuration files or constants in your frontend/backend code where these environment paths are explicitly required to match your local setup
+Ensure you update any local configuration files or constants in your frontend/backend code where these environment paths are explicitly required to match your local setup
 
 ### 3. Install Dependencies
 Navigate to the backend directory and install the necessary npm packages:
