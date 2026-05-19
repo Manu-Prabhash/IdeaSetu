@@ -2,6 +2,9 @@
 
 IdeaSetu is a dedicated platform designed to bridge the gap between government bodies and entrepreneurs. It provides a collaborative space where government officials can post pressing, real-world problems and entrepreneurs can pitch innovative solutions. By streamlining the proposal, approval, and communication phases, IdeaSetu helps bring impactful ideas to life.
 
+## App Link
+https://idea-setu.vercel.app
+
 ## 🚀 Key Features
 
 - **Role-Based Authentication:** Secure login system differentiating between Government Officials (higher access tier) and Entrepreneurs using secure token systems.
