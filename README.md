@@ -20,7 +20,48 @@ https://idea-setu.vercel.app
 - **Backend:** Node.js, Express, JSON configuration
 - **Database:** MongoDB (using Mongoose for data modeling)
 - **Security & Auth:** JSON Web Tokens (JWT) for session management, bcrypt for robust password hashing
-
+- 
+## Project Structure 
+IdeaSetu Backend Project/
+|
+|-- .gitignore
+|-- README.md
+|
+|-- backend/
+|   |
+|   |-- .env                  # Local environment variables, do not commit/share
+|   |-- package.json          # Backend dependencies and project metadata
+|   |-- package-lock.json     # Locked dependency versions
+|   |-- server.js             # Main Express server entry point
+|   |
+|   |-- middleware/
+|   |   |-- auth.js           # JWT authentication and role authorization
+|   |
+|   |-- models/
+|   |   |-- User.js           # User schema: admin/entrepreneur accounts
+|   |   |-- Problem.js        # Government problem/challenge schema
+|   |   |-- Pitch.js          # Entrepreneur pitch schema
+|   |   |-- Collaboration.js  # Collaboration session schema
+|   |   |-- CollaborationMessage.js # Chat message and attachment schema
+|   |
+|   |-- routes/
+|   |   |-- authRoutes.js             # Register, login, forgot password
+|   |   |-- adminRoutes.js            # Admin problem and pitch review APIs
+|   |   |-- entrepreneurRoutes.js     # Entrepreneur pitch/problem APIs
+|   |   |-- collaborationRoutes.js    # Collaboration request, accept, chat, live stream
+|   |   |-- newsRoutes.js             # NewsAPI integration
+|   |
+|   |-- uploads/
+|       |-- collaboration-files/       # Uploaded collaboration attachments
+|
+|-- frontend/
+    |
+    |-- index.html             # Main frontend HTML structure
+    |-- style.css              # Frontend styling
+    |-- app.js                 # Frontend logic and API calls
+    |
+    |-- assets/
+        |-- logoideasetu.png   # Project logo
 ## 📦 Installation & Setup
 
 Follow these steps to configure and run IdeaSetu on your local machine.
